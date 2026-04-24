@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="refresh" content="300">
-<title>AI/光通信板块日报 - 2026-04-24 16:38:04</title>
+<title>AI/光通信板块日报 - 2026-04-24 16:43:45</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#0f172a; color:#e2e8f0; padding:20px; max-width:1300px; margin:0 auto; }
@@ -109,12 +109,39 @@ tr:hover { background:#334155; }
 .us-related-item { font-size:12px; color:#cbd5e1; padding:4px 0; line-height:1.6; }
 
 .footer { text-align:center; color:#475569; margin-top:40px; padding-top:20px; border-top:1px solid #334155; font-size:13px; }
+
+/* 刷新按钮区域 */
+.refresh-bar { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.refresh-btn { padding:8px 18px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; gap:6px; }
+.refresh-btn.quick { background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; }
+.refresh-btn.quick:hover { background:linear-gradient(135deg,#60a5fa,#3b82f6); transform:translateY(-1px); box-shadow:0 4px 12px rgba(59,130,246,0.4); }
+.refresh-btn.full { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+.refresh-btn.full:hover { background:linear-gradient(135deg,#fbbf24,#f59e0b); transform:translateY(-1px); box-shadow:0 4px 12px rgba(245,158,11,0.4); }
+.refresh-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none !important; }
+.refresh-btn .spin { animation:spin 1s linear infinite; }
+@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+.refresh-toast { position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transition:all 0.4s ease; opacity:0; transform:translateY(-20px); pointer-events:none; max-width:400px; box-shadow:0 8px 30px rgba(0,0,0,0.5); }
+.refresh-toast.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+.refresh-toast.info { background:#1e3a5f; color:#60a5fa; border:1px solid #3b82f6; }
+.refresh-toast.success { background:#14532d; color:#86efac; border:1px solid #22c55e; }
+.refresh-toast.error { background:#7f1d1d; color:#fca5a5; border:1px solid #ef4444; }
+.refresh-progress { margin-top:8px; background:#0f172a; border-radius:4px; height:6px; overflow:hidden; }
+.refresh-progress-bar { height:100%; background:linear-gradient(90deg,#3b82f6,#60a5fa); border-radius:4px; transition:width 0.5s ease; }
+.refresh-time { color:#475569; font-size:11px; }
 </style>
 </head>
 <body>
 
 <h1>📊 AI/光通信板块深度日报</h1>
-<p class="subtitle">生成时间：2026-04-24 16:38:04 | 聚焦：AI算力 · CPO · 光模块 · 光通信 · OCS · PCB</p>
+<p class="subtitle">生成时间：2026-04-24 16:43:45 | 聚焦：AI算力 · CPO · 光模块 · 光通信 · OCS · PCB</p>
+
+<!-- 刷新按钮 + Toast提示 -->
+<div class="refresh-bar">
+    <span class="refresh-time" id="refreshTime"></span>
+    <button class="refresh-btn quick" id="btnQuick" onclick="doRefresh('quick')">⚡ 快速刷新</button>
+    <button class="refresh-btn full" id="btnFull" onclick="doRefresh('full')">🔄 完整刷新</button>
+</div>
+<div class="refresh-toast" id="toast"></div>
 
 <!-- ========== 顶部Tab导航 ========== -->
 <div class="main-tabs">
@@ -124,6 +151,7 @@ tr:hover { background:#334155; }
     <button class="main-tab" onclick="switchTab('tab-trend')">📈 趋势分析</button>
     <button class="main-tab" onclick="switchTab('tab-news')">📰 舆情监测</button>
     <button class="main-tab" onclick="switchTab('tab-us')">🇺🇸 美股关联</button>
+    <button class="main-tab" onclick="switchTab('tab-ai')">🤖 AI预测</button>
 </div>
 
 <!-- ========== TAB 1: 今日概览 ========== -->
@@ -4118,6 +4146,530 @@ tr:hover { background:#334155; }
         </div>
 </div>
 
+<!-- ========== TAB 7: AI预测 ========== -->
+<div id="tab-ai" class="tab-panel">
+<h2>🤖 机器学习预测（未来3个交易日）</h2>
+<p style="color:#94a3b8;margin-bottom:12px;">基于历史半年数据，使用随机森林 + 梯度提升 + 岭回归集成模型预测</p>
+
+    <div class="summary-cards">
+        <div class="card"><div class="label">预测周期</div><div class="number" style="color:#60a5fa;font-size:18px">未来3个交易日</div></div>
+        <div class="card"><div class="label">看涨</div><div class="number up">14</div></div>
+        <div class="card"><div class="label">看跌</div><div class="number down">15</div></div>
+        <div class="card"><div class="label">中性</div><div class="number" style="color:#94a3b8">8</div></div>
+        <div class="card"><div class="label">整体情绪</div><div class="number" style="color:#22c55e">偏空</div></div>
+    </div><h3>📊 板块预测概览</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:12px 0;">
+        <div class="sector-card" style="margin:0">
+            <h3 style="font-size:14px">AI算力</h3>
+            <div style="display:flex;justify-content:space-between;margin:8px 0">
+                <span style="color:#22c55e;font-size:20px;font-weight:bold">37.1%</span>
+                <span style="color:#22c55e;font-size:14px">预测收益 -0.17%</span>
+            </div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:37%;height:100%;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:4px">
+                <span>看涨 1</span>
+                <span>看跌 5</span>
+                <span>共 8 只</span>
+            </div>
+        </div>
+        <div class="sector-card" style="margin:0">
+            <h3 style="font-size:14px">CPO(共封装光学)</h3>
+            <div style="display:flex;justify-content:space-between;margin:8px 0">
+                <span style="color:#ef4444;font-size:20px;font-weight:bold">56.9%</span>
+                <span style="color:#ef4444;font-size:14px">预测收益 +4.19%</span>
+            </div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:56%;height:100%;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:4px">
+                <span>看涨 6</span>
+                <span>看跌 2</span>
+                <span>共 8 只</span>
+            </div>
+        </div>
+        <div class="sector-card" style="margin:0">
+            <h3 style="font-size:14px">光模块</h3>
+            <div style="display:flex;justify-content:space-between;margin:8px 0">
+                <span style="color:#94a3b8;font-size:20px;font-weight:bold">48.5%</span>
+                <span style="color:#ef4444;font-size:14px">预测收益 +0.38%</span>
+            </div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:48%;height:100%;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:4px">
+                <span>看涨 4</span>
+                <span>看跌 5</span>
+                <span>共 9 只</span>
+            </div>
+        </div>
+        <div class="sector-card" style="margin:0">
+            <h3 style="font-size:14px">光通信</h3>
+            <div style="display:flex;justify-content:space-between;margin:8px 0">
+                <span style="color:#94a3b8;font-size:20px;font-weight:bold">53.5%</span>
+                <span style="color:#ef4444;font-size:14px">预测收益 +2.87%</span>
+            </div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:53%;height:100%;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:4px">
+                <span>看涨 4</span>
+                <span>看跌 2</span>
+                <span>共 8 只</span>
+            </div>
+        </div>
+        <div class="sector-card" style="margin:0">
+            <h3 style="font-size:14px">OCS(光电路交换)</h3>
+            <div style="display:flex;justify-content:space-between;margin:8px 0">
+                <span style="color:#22c55e;font-size:20px;font-weight:bold">43.4%</span>
+                <span style="color:#ef4444;font-size:14px">预测收益 +1.24%</span>
+            </div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:43%;height:100%;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:4px">
+                <span>看涨 2</span>
+                <span>看跌 4</span>
+                <span>共 6 只</span>
+            </div>
+        </div>
+        <div class="sector-card" style="margin:0">
+            <h3 style="font-size:14px">PCB</h3>
+            <div style="display:flex;justify-content:space-between;margin:8px 0">
+                <span style="color:#94a3b8;font-size:20px;font-weight:bold">45.7%</span>
+                <span style="color:#22c55e;font-size:14px">预测收益 -1.55%</span>
+            </div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:45%;height:100%;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:4px">
+                <span>看涨 2</span>
+                <span>看跌 3</span>
+                <span>共 9 只</span>
+            </div>
+        </div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0"><div><h3>🔥 最看涨 Top5</h3><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>博创科技</strong> <span style="color:#64748b;font-size:12px">300548</span></div>
+                <div style="text-align:right"><span style="color:#ef4444;font-weight:bold;font-size:16px">82.1%</span><br><span style="font-size:11px;color:#94a3b8">强烈看涨 🔴🔴🔴</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>长光华芯</strong> <span style="color:#64748b;font-size:12px">688048</span></div>
+                <div style="text-align:right"><span style="color:#ef4444;font-weight:bold;font-size:16px">78.6%</span><br><span style="font-size:11px;color:#94a3b8">强烈看涨 🔴🔴🔴</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>腾景科技</strong> <span style="color:#64748b;font-size:12px">688195</span></div>
+                <div style="text-align:right"><span style="color:#ef4444;font-weight:bold;font-size:16px">72.8%</span><br><span style="font-size:11px;color:#94a3b8">强烈看涨 🔴🔴🔴</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>科大讯飞</strong> <span style="color:#64748b;font-size:12px">002230</span></div>
+                <div style="text-align:right"><span style="color:#ef4444;font-weight:bold;font-size:16px">69.5%</span><br><span style="font-size:11px;color:#94a3b8">偏多 🔴🔴</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>长飞光纤</strong> <span style="color:#64748b;font-size:12px">601869</span></div>
+                <div style="text-align:right"><span style="color:#ef4444;font-weight:bold;font-size:16px">68.6%</span><br><span style="font-size:11px;color:#94a3b8">偏多 🔴🔴</span></div>
+            </div>
+        </div></div><div><h3>❄️ 最看跌 Top5</h3><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>寒武纪</strong> <span style="color:#64748b;font-size:12px">688256</span></div>
+                <div style="text-align:right"><span style="color:#22c55e;font-weight:bold;font-size:16px">12.4%</span><br><span style="font-size:11px;color:#94a3b8">强烈看跌 🟢🟢🟢</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>光迅科技</strong> <span style="color:#64748b;font-size:12px">002281</span></div>
+                <div style="text-align:right"><span style="color:#22c55e;font-weight:bold;font-size:16px">19.6%</span><br><span style="font-size:11px;color:#94a3b8">强烈看跌 🟢🟢🟢</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>海康威视</strong> <span style="color:#64748b;font-size:12px">002415</span></div>
+                <div style="text-align:right"><span style="color:#22c55e;font-weight:bold;font-size:16px">21.0%</span><br><span style="font-size:11px;color:#94a3b8">强烈看跌 🟢🟢🟢</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>紫光股份</strong> <span style="color:#64748b;font-size:12px">000938</span></div>
+                <div style="text-align:right"><span style="color:#22c55e;font-weight:bold;font-size:16px">21.8%</span><br><span style="font-size:11px;color:#94a3b8">强烈看跌 🟢🟢🟢</span></div>
+            </div>
+        </div><div class="stock-card" style="padding:10px;margin:6px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><strong>深南电路</strong> <span style="color:#64748b;font-size:12px">002916</span></div>
+                <div style="text-align:right"><span style="color:#22c55e;font-weight:bold;font-size:16px">23.4%</span><br><span style="font-size:11px;color:#94a3b8">强烈看跌 🟢🟢🟢</span></div>
+            </div>
+        </div></div></div><h3>📋 全部个股预测明细</h3><table><thead><tr><th>代码</th><th>名称</th><th>最新价</th><th>上涨概率</th><th>预测收益率</th><th>预测价格</th><th>价格区间</th><th>信号</th><th>关键因子</th></tr></thead><tbody><tr>
+            <td>300548</td>
+            <td>博创科技</td>
+            <td>270.96</td>
+            <td style="color:#ef4444;font-weight:bold">82.1%</td>
+            <td style="color:#22c55e;font-weight:bold">-1.49%</td>
+            <td>266.93</td>
+            <td style="font-size:11px">248.47-285.38</td>
+            <td>强烈看涨 🔴🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, volatility5, amplitude</td>
+        </tr><tr>
+            <td>688048</td>
+            <td>长光华芯</td>
+            <td>367.0</td>
+            <td style="color:#ef4444;font-weight:bold">78.6%</td>
+            <td style="color:#ef4444;font-weight:bold">+22.89%</td>
+            <td>451.0</td>
+            <td style="font-size:11px">393.99-508.01</td>
+            <td>强烈看涨 🔴🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">RSI6, volatility5, lower_shadow</td>
+        </tr><tr>
+            <td>688195</td>
+            <td>腾景科技</td>
+            <td>363.0</td>
+            <td style="color:#ef4444;font-weight:bold">72.8%</td>
+            <td style="color:#22c55e;font-weight:bold">-5.01%</td>
+            <td>344.81</td>
+            <td style="font-size:11px">310.32-379.31</td>
+            <td>强烈看涨 🔴🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, RSI6, MACD_hist</td>
+        </tr><tr>
+            <td>002230</td>
+            <td>科大讯飞</td>
+            <td>48.89</td>
+            <td style="color:#ef4444;font-weight:bold">69.5%</td>
+            <td style="color:#ef4444;font-weight:bold">+2.31%</td>
+            <td>50.02</td>
+            <td style="font-size:11px">49.16-50.88</td>
+            <td>偏多 🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">pct_1d, MACD, volatility5</td>
+        </tr><tr>
+            <td>601869</td>
+            <td>长飞光纤</td>
+            <td>385.02</td>
+            <td style="color:#ef4444;font-weight:bold">68.6%</td>
+            <td style="color:#ef4444;font-weight:bold">+6.30%</td>
+            <td>409.28</td>
+            <td style="font-size:11px">376.37-442.2</td>
+            <td>偏多 🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, RSI14, amplitude</td>
+        </tr><tr>
+            <td>300308</td>
+            <td>中际旭创</td>
+            <td>897.0</td>
+            <td style="color:#ef4444;font-weight:bold">67.3%</td>
+            <td style="color:#ef4444;font-weight:bold">+1.63%</td>
+            <td>911.64</td>
+            <td style="font-size:11px">885.45-937.82</td>
+            <td>偏多 🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, MA20_bias, amplitude</td>
+        </tr><tr>
+            <td>688313</td>
+            <td>仕佳光子</td>
+            <td>139.3</td>
+            <td style="color:#ef4444;font-weight:bold">66.2%</td>
+            <td style="color:#ef4444;font-weight:bold">+13.68%</td>
+            <td>158.35</td>
+            <td style="font-size:11px">145.36-171.35</td>
+            <td>偏多 🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, vol_ratio, pct_5d</td>
+        </tr><tr>
+            <td>688498</td>
+            <td>源杰科技</td>
+            <td>1394.99</td>
+            <td style="color:#ef4444;font-weight:bold">61.5%</td>
+            <td style="color:#ef4444;font-weight:bold">+0.23%</td>
+            <td>1398.17</td>
+            <td style="font-size:11px">1269.15-1527.18</td>
+            <td>偏多 🔴🔴</td>
+            <td style="font-size:11px;color:#94a3b8">amplitude, MACD, MA10_bias</td>
+        </tr><tr>
+            <td>600522</td>
+            <td>中天科技</td>
+            <td>34.07</td>
+            <td style="color:#ef4444;font-weight:bold">59.5%</td>
+            <td style="color:#22c55e;font-weight:bold">-2.20%</td>
+            <td>33.32</td>
+            <td style="font-size:11px">30.8-35.85</td>
+            <td>微偏多 🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, volatility5, MACD</td>
+        </tr><tr>
+            <td>002491</td>
+            <td>通鼎互联</td>
+            <td>16.83</td>
+            <td style="color:#ef4444;font-weight:bold">59.1%</td>
+            <td style="color:#ef4444;font-weight:bold">+4.55%</td>
+            <td>17.6</td>
+            <td style="font-size:11px">16.27-18.92</td>
+            <td>微偏多 🔴</td>
+            <td style="font-size:11px;color:#94a3b8">volatility5, MACD, MACD_hist</td>
+        </tr><tr>
+            <td>000988</td>
+            <td>华工科技</td>
+            <td>117.65</td>
+            <td style="color:#ef4444;font-weight:bold">58.8%</td>
+            <td style="color:#ef4444;font-weight:bold">+1.00%</td>
+            <td>118.83</td>
+            <td style="font-size:11px">113.43-124.22</td>
+            <td>微偏多 🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, MACD, lower_shadow</td>
+        </tr><tr>
+            <td>300502</td>
+            <td>新易盛</td>
+            <td>608.28</td>
+            <td style="color:#ef4444;font-weight:bold">57.6%</td>
+            <td style="color:#22c55e;font-weight:bold">-1.74%</td>
+            <td>597.68</td>
+            <td style="font-size:11px">547.13-648.24</td>
+            <td>微偏多 🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MA10_bias, MACD_hist, MA20_bias</td>
+        </tr><tr>
+            <td>002463</td>
+            <td>沪电股份</td>
+            <td>106.62</td>
+            <td style="color:#ef4444;font-weight:bold">57.1%</td>
+            <td style="color:#22c55e;font-weight:bold">-2.06%</td>
+            <td>104.42</td>
+            <td style="font-size:11px">102.25-106.6</td>
+            <td>微偏多 🔴</td>
+            <td style="font-size:11px;color:#94a3b8">RSI14, lower_shadow, MA20_bias</td>
+        </tr><tr>
+            <td>603228</td>
+            <td>景旺电子</td>
+            <td>70.0</td>
+            <td style="color:#ef4444;font-weight:bold">56.2%</td>
+            <td style="color:#22c55e;font-weight:bold">-5.50%</td>
+            <td>66.15</td>
+            <td style="font-size:11px">62.81-69.49</td>
+            <td>微偏多 🔴</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, volatility5, BB_pos</td>
+        </tr><tr>
+            <td>603920</td>
+            <td>世运电路</td>
+            <td>58.74</td>
+            <td style="color:#94a3b8;font-weight:bold">54.1%</td>
+            <td style="color:#ef4444;font-weight:bold">+6.21%</td>
+            <td>62.39</td>
+            <td style="font-size:11px">58.76-66.01</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, lower_shadow, upper_shadow</td>
+        </tr><tr>
+            <td>002938</td>
+            <td>鹏鼎控股</td>
+            <td>75.42</td>
+            <td style="color:#94a3b8;font-weight:bold">52.4%</td>
+            <td style="color:#22c55e;font-weight:bold">-6.93%</td>
+            <td>70.19</td>
+            <td style="font-size:11px">65.45-74.94</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, pct_5d, momentum3</td>
+        </tr><tr>
+            <td>600183</td>
+            <td>生益科技</td>
+            <td>74.95</td>
+            <td style="color:#94a3b8;font-weight:bold">50.9%</td>
+            <td style="color:#22c55e;font-weight:bold">-2.98%</td>
+            <td>72.72</td>
+            <td style="font-size:11px">69.94-75.5</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, RSI6, lower_shadow</td>
+        </tr><tr>
+            <td>000066</td>
+            <td>中国长城</td>
+            <td>16.19</td>
+            <td style="color:#94a3b8;font-weight:bold">50.3%</td>
+            <td style="color:#ef4444;font-weight:bold">+3.06%</td>
+            <td>16.69</td>
+            <td style="font-size:11px">16.12-17.25</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">amplitude, volatility5, MACD</td>
+        </tr><tr>
+            <td>600105</td>
+            <td>永鼎股份</td>
+            <td>48.5</td>
+            <td style="color:#94a3b8;font-weight:bold">50.0%</td>
+            <td style="color:#ef4444;font-weight:bold">+9.65%</td>
+            <td>53.18</td>
+            <td style="font-size:11px">50.03-56.33</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">volatility5, MA20_bias, pct_5d</td>
+        </tr><tr>
+            <td>002436</td>
+            <td>兴森科技</td>
+            <td>28.4</td>
+            <td style="color:#94a3b8;font-weight:bold">49.8%</td>
+            <td style="color:#ef4444;font-weight:bold">+2.08%</td>
+            <td>28.99</td>
+            <td style="font-size:11px">27.78-30.21</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, momentum3, RSI14</td>
+        </tr><tr>
+            <td>300474</td>
+            <td>景嘉微</td>
+            <td>62.12</td>
+            <td style="color:#94a3b8;font-weight:bold">49.2%</td>
+            <td style="color:#22c55e;font-weight:bold">-1.11%</td>
+            <td>61.43</td>
+            <td style="font-size:11px">60.41-62.44</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">MA20_bias, MACD, lower_shadow</td>
+        </tr><tr>
+            <td>600498</td>
+            <td>烽火通信</td>
+            <td>55.01</td>
+            <td style="color:#94a3b8;font-weight:bold">48.6%</td>
+            <td style="color:#ef4444;font-weight:bold">+0.48%</td>
+            <td>55.28</td>
+            <td style="font-size:11px">51.9-58.65</td>
+            <td>中性 ⚪</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, MA20_bias, volatility5</td>
+        </tr><tr>
+            <td>300570</td>
+            <td>太辰光</td>
+            <td>135.03</td>
+            <td style="color:#22c55e;font-weight:bold">44.2%</td>
+            <td style="color:#ef4444;font-weight:bold">+2.30%</td>
+            <td>138.14</td>
+            <td style="font-size:11px">127.85-148.43</td>
+            <td>微偏空 🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, RSI6, vol_ratio</td>
+        </tr><tr>
+            <td>600487</td>
+            <td>亨通光电</td>
+            <td>69.52</td>
+            <td style="color:#22c55e;font-weight:bold">43.7%</td>
+            <td style="color:#22c55e;font-weight:bold">-0.23%</td>
+            <td>69.36</td>
+            <td style="font-size:11px">64.43-74.29</td>
+            <td>微偏空 🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, RSI6, upper_shadow</td>
+        </tr><tr>
+            <td>300394</td>
+            <td>天孚通信</td>
+            <td>350.09</td>
+            <td style="color:#22c55e;font-weight:bold">39.8%</td>
+            <td style="color:#ef4444;font-weight:bold">+3.43%</td>
+            <td>362.09</td>
+            <td style="font-size:11px">328.39-395.78</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, MACD_hist, RSI14</td>
+        </tr><tr>
+            <td>603083</td>
+            <td>剑桥科技</td>
+            <td>164.33</td>
+            <td style="color:#22c55e;font-weight:bold">39.5%</td>
+            <td style="color:#22c55e;font-weight:bold">-6.66%</td>
+            <td>153.38</td>
+            <td style="font-size:11px">139.9-166.86</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">volatility5, upper_shadow, lower_shadow</td>
+        </tr><tr>
+            <td>000977</td>
+            <td>浪潮信息</td>
+            <td>73.83</td>
+            <td style="color:#22c55e;font-weight:bold">38.1%</td>
+            <td style="color:#22c55e;font-weight:bold">-0.70%</td>
+            <td>73.32</td>
+            <td style="font-size:11px">69.04-77.59</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">volatility5, MACD, RSI14</td>
+        </tr><tr>
+            <td>300476</td>
+            <td>胜宏科技</td>
+            <td>331.95</td>
+            <td style="color:#22c55e;font-weight:bold">34.8%</td>
+            <td style="color:#22c55e;font-weight:bold">-0.96%</td>
+            <td>328.75</td>
+            <td style="font-size:11px">303.86-353.64</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD_hist, lower_shadow, pct_1d</td>
+        </tr><tr>
+            <td>603019</td>
+            <td>中科曙光</td>
+            <td>91.68</td>
+            <td style="color:#22c55e;font-weight:bold">34.7%</td>
+            <td style="color:#22c55e;font-weight:bold">-1.28%</td>
+            <td>90.51</td>
+            <td style="font-size:11px">87.46-93.55</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">lower_shadow, RSI14, volatility5</td>
+        </tr><tr>
+            <td>002815</td>
+            <td>崇达技术</td>
+            <td>15.45</td>
+            <td style="color:#22c55e;font-weight:bold">32.3%</td>
+            <td style="color:#22c55e;font-weight:bold">-3.43%</td>
+            <td>14.92</td>
+            <td style="font-size:11px">14.55-15.29</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">BB_pos, lower_shadow, MACD</td>
+        </tr><tr>
+            <td>688205</td>
+            <td>德科立</td>
+            <td>242.28</td>
+            <td style="color:#22c55e;font-weight:bold">31.8%</td>
+            <td style="color:#22c55e;font-weight:bold">-4.42%</td>
+            <td>231.58</td>
+            <td style="font-size:11px">207.33-255.83</td>
+            <td>偏空 🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, BB_pos, MA20_bias</td>
+        </tr><tr>
+            <td>301205</td>
+            <td>联特科技</td>
+            <td>270.23</td>
+            <td style="color:#22c55e;font-weight:bold">27.9%</td>
+            <td style="color:#22c55e;font-weight:bold">-1.32%</td>
+            <td>266.65</td>
+            <td style="font-size:11px">242.63-290.68</td>
+            <td>强烈看跌 🟢🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">momentum5, MACD, BB_pos</td>
+        </tr><tr>
+            <td>002916</td>
+            <td>深南电路</td>
+            <td>301.3</td>
+            <td style="color:#22c55e;font-weight:bold">23.4%</td>
+            <td style="color:#22c55e;font-weight:bold">-0.38%</td>
+            <td>300.14</td>
+            <td style="font-size:11px">292.28-308.01</td>
+            <td>强烈看跌 🟢🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, MA20_bias, RSI14</td>
+        </tr><tr>
+            <td>000938</td>
+            <td>紫光股份</td>
+            <td>31.2</td>
+            <td style="color:#22c55e;font-weight:bold">21.8%</td>
+            <td style="color:#22c55e;font-weight:bold">-5.49%</td>
+            <td>29.49</td>
+            <td style="font-size:11px">27.39-31.59</td>
+            <td>强烈看跌 🟢🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MA20_bias, pct_1d, MA5_bias</td>
+        </tr><tr>
+            <td>002415</td>
+            <td>海康威视</td>
+            <td>33.49</td>
+            <td style="color:#22c55e;font-weight:bold">21.0%</td>
+            <td style="color:#22c55e;font-weight:bold">-0.50%</td>
+            <td>33.32</td>
+            <td style="font-size:11px">32.09-34.56</td>
+            <td>强烈看跌 🟢🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, momentum3, MA10_bias</td>
+        </tr><tr>
+            <td>002281</td>
+            <td>光迅科技</td>
+            <td>131.68</td>
+            <td style="color:#22c55e;font-weight:bold">19.6%</td>
+            <td style="color:#ef4444;font-weight:bold">+6.24%</td>
+            <td>139.9</td>
+            <td style="font-size:11px">132.72-147.08</td>
+            <td>强烈看跌 🟢🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">momentum5, pct_5d, volatility5</td>
+        </tr><tr>
+            <td>688256</td>
+            <td>寒武纪</td>
+            <td>1323.0</td>
+            <td style="color:#22c55e;font-weight:bold">12.4%</td>
+            <td style="color:#ef4444;font-weight:bold">+2.34%</td>
+            <td>1353.95</td>
+            <td style="font-size:11px">1301.0-1406.9</td>
+            <td>强烈看跌 🟢🟢🟢</td>
+            <td style="font-size:11px;color:#94a3b8">MACD, MA10_bias, MA5_bias</td>
+        </tr></tbody></table><p style="color:#64748b;font-size:11px;margin-top:12px">⚠️ 模型基于历史半年数据训练（随机森林+梯度提升+岭回归集成），仅供参考，不构成投资建议。上涨概率为模型对未来3个交易日方向的预测置信度。</p>
+</div>
+
 <div class="footer">
     <p>📊 AI/光通信板块数据工作流 | 自动生成 | 数据来源：新浪财经 & 东方财富</p>
     <p>⚠️ 以上数据仅供学习参考，不构成投资建议</p>
@@ -4137,5 +4689,82 @@ function switchSubTab(btn, panelId) {
     btn.parentElement.parentElement.querySelectorAll('.sub-tab-content').forEach(p => p.style.display='none');
     document.getElementById(panelId).style.display='block';
 }
+
+/* ====== 刷新按钮逻辑 ====== */
+let pollTimer = null;
+const toast = document.getElementById('toast');
+const btnQuick = document.getElementById('btnQuick');
+const btnFull = document.getElementById('btnFull');
+
+function showToast(msg, type, duration) {
+    toast.textContent = msg;
+    toast.className = 'refresh-toast ' + type + ' show';
+    if (duration) setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function setButtonsDisabled(disabled) {
+    btnQuick.disabled = disabled;
+    btnFull.disabled = disabled;
+    if (disabled) {
+        btnQuick.innerHTML = '<span class="spin">⏳</span> 刷新中...';
+        btnFull.innerHTML = '<span class="spin">⏳</span> 刷新中...';
+    } else {
+        btnQuick.innerHTML = '⚡ 快速刷新';
+        btnFull.innerHTML = '🔄 完整刷新';
+    }
+}
+
+function doRefresh(mode) {
+    const url = mode === 'full' ? '/api/refresh' : '/api/quick-refresh';
+    const label = mode === 'full' ? '完整刷新（约60秒）' : '快速刷新（约20秒）';
+
+    setButtonsDisabled(true);
+    showToast('🔄 ' + label + '...', 'info');
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'busy') {
+                showToast('⏳ ' + data.message, 'info', 3000);
+                setButtonsDisabled(false);
+                return;
+            }
+            // 开始轮询状态
+            pollTimer = setInterval(pollStatus, 2000);
+        })
+        .catch(err => {
+            showToast('❌ 无法连接服务器，请确保 web_server.py 正在运行', 'error', 5000);
+            setButtonsDisabled(false);
+        });
+}
+
+function pollStatus() {
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            if (data.running) {
+                const pct = Math.round((data.step / data.total_steps) * 100);
+                showToast(data.progress + ' (' + pct + '%)', 'info');
+            } else {
+                clearInterval(pollTimer);
+                pollTimer = null;
+                if (data.last_result === 'success') {
+                    showToast('✅ 刷新成功！3秒后自动刷新页面...', 'success');
+                    setTimeout(() => location.reload(), 3000);
+                } else if (data.last_result) {
+                    showToast('❌ ' + data.progress, 'error', 8000);
+                    setButtonsDisabled(false);
+                }
+            }
+        })
+        .catch(() => {
+            clearInterval(pollTimer);
+            pollTimer = null;
+            setButtonsDisabled(false);
+        });
+}
+
+// 显示上次刷新时间
+document.getElementById('refreshTime').textContent = '报告生成: 2026-04-24 16:43:45';
 </script>
 </body></html>

@@ -15,7 +15,14 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-plt.rcParams["font.sans-serif"] = ["Arial Unicode MS", "SimHei", "PingFang SC"]
+plt.rcParams["font.sans-serif"] = [
+    "Arial Unicode MS",  # macOS
+    "PingFang SC",  # macOS
+    "Noto Sans CJK SC",  # Linux (GitHub Actions)
+    "WenQuanYi Micro Hei",  # Linux 备选
+    "SimHei",  # Windows
+    "Microsoft YaHei",  # Windows
+]
 plt.rcParams["axes.unicode_minus"] = False
 
 from config import STOCK_GROUPS, SECTOR_INFO, STOCK_PROFILES, DATA_DIR, OUTPUT_DIR

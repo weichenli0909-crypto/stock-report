@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+.DS_Store
+data/*.csv
+data/*.json
+output/*.png
+output/*.html
+gh-pages/.git
+

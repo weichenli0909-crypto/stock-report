@@ -4767,20 +4767,69 @@ function pollStatus() {
 // 显示上次刷新时间
 document.getElementById('refreshTime').textContent = '报告生成: 2026-04-27 18:12:24';
 
-/* ====== 实时行情自动更新（30秒轮询） ====== */
+/* ====== 实时行情自动更新（30秒轮询，直连新浪） ====== */
 const QUOTE_INTERVAL = 30000;
 let quoteTimer = null;
+const SINA_CODES = 'sz002415,sh603019,sh688256,sz300474,sz000977,sz000938,sz002230,sz000066,sz300308,sz300502,sh688498,sh688195,sz002281,sh688048,sh688313,sh688205,sz300308,sz300502,sz300394,sz300570,sz002281,sh603083,sz300548,sz301205,sz000988,sh600498,sz000988,sh601869,sh600487,sz300394,sh600522,sz002491,sh600105,sz300308,sz300502,sz300394,sz002281,sh688205,sz300570,sz002463,sz002916,sh600183,sz002938,sz300476,sz002436,sz002815,sh603228,sh603920';
 
-function fetchQuotes() {
-    fetch('/api/quotes')
-        .then(r => { if (!r.ok) throw new Error('网络错误'); return r.json(); })
-        .then(data => {
-            if (data.error) { console.warn('行情获取失败:', data.error); return; }
-            updateQuotes(data);
-            document.getElementById('refreshTime').textContent =
-                '报告生成: 2026-04-27 18:12:24 | 行情更新: ' + data.time;
-        })
-        .catch(err => { console.warn('行情轮询失败:', err); });
+function fetchSinaQuotes() {
+    const scriptId = 'sina-quote-loader';
+    const oldScript = document.getElementById(scriptId);
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://hq.sinajs.cn/list=' + SINA_CODES;
+    script.onload = function() {
+        const data = parseSinaQuotes();
+        updateQuotes(data);
+        const now = new Date().toLocaleTimeString();
+        document.getElementById('refreshTime').textContent =
+            '报告生成: 2026-04-27 18:12:24 | 行情更新: ' + now;
+        script.remove();
+    };
+    script.onerror = function() {
+        console.warn('新浪行情加载失败');
+        script.remove();
+    };
+    document.head.appendChild(script);
+}
+
+function parseSinaQuotes() {
+    const quotes = {};
+    const codes = SINA_CODES.split(',');
+    for (const sinaCode of codes) {
+        const dataStr = window['hq_str_' + sinaCode];
+        if (!dataStr) continue;
+        const fields = dataStr.split(',');
+        if (fields.length < 5) continue;
+        const code6 = sinaCode.substring(2);
+        const name = fields[0];
+        const open = parseFloat(fields[1]) || 0;
+        const prevClose = parseFloat(fields[2]) || 0;
+        const price = parseFloat(fields[3]) || 0;
+        const high = parseFloat(fields[4]) || 0;
+        const low = parseFloat(fields[5]) || 0;
+        const volume = parseInt(fields[8]) || 0;
+        const amount = parseFloat(fields[9]) || 0;
+        const changePct = prevClose > 0 ? parseFloat(((price - prevClose) / prevClose * 100).toFixed(2)) : 0;
+        quotes[code6] = {
+            name: name,
+            price: price,
+            open: open,
+            prev_close: prevClose,
+            high: high,
+            low: low,
+            volume: volume,
+            amount: amount,
+            change_pct: changePct,
+        };
+    }
+    return {
+        time: new Date().toLocaleTimeString(),
+        count: Object.keys(quotes).length,
+        quotes: quotes,
+    };
 }
 
 function updateQuotes(data) {
@@ -4830,7 +4879,7 @@ function updateQuotes(data) {
 }
 
 // 启动自动刷新
-quoteTimer = setInterval(fetchQuotes, QUOTE_INTERVAL);
-fetchQuotes();
+quoteTimer = setInterval(fetchSinaQuotes, QUOTE_INTERVAL);
+fetchSinaQuotes();
 </script>
 </body></html>

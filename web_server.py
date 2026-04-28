@@ -54,6 +54,8 @@ class ReportHandler(SimpleHTTPRequestHandler):
             self.handle_quick_refresh()
         elif path == "/api/quotes":
             self.handle_quotes()
+        elif path == "/api/search":
+            self.handle_search()
         else:
             # 根路径自动重定向到 report.html
             if path == "/" or path == "":
@@ -166,6 +168,90 @@ class ReportHandler(SimpleHTTPRequestHandler):
                 "time": datetime.now().strftime("%H:%M:%S"),
                 "count": len(quotes),
                 "quotes": quotes,
+            })
+        except Exception as e:
+            self.send_json({"error": str(e)})
+
+    def handle_search(self):
+        """个股搜索分析接口"""
+        try:
+            from urllib.parse import parse_qs
+            query = parse_qs(self.path.split('?')[1]) if '?' in self.path else {}
+            code = query.get('code', [''])[0].strip()
+            if not code or len(code) != 6 or not code.isdigit():
+                self.send_json({"error": "请输入6位股票代码"})
+                return
+
+            prefix = "sh" if code.startswith(("6", "9")) else "sz"
+            sina_code = f"{prefix}{code}"
+            url = f"https://hq.sinajs.cn/list={sina_code}"
+
+            result = subprocess.run(
+                ["curl", "-s", "-m", "15", "-H", "Referer: https://finance.sina.com.cn",
+                 "-H", "User-Agent: Mozilla/5.0", url],
+                capture_output=True, timeout=20
+            )
+            if result.returncode != 0 or not result.stdout:
+                self.send_json({"error": "无法获取行情数据"})
+                return
+
+            text = result.stdout.decode("gbk", errors="replace")
+            quote = None
+            for line in text.strip().split("\n"):
+                if '="' not in line:
+                    continue
+                try:
+                    data_str = line.split('"')[1]
+                    if not data_str:
+                        continue
+                    fields = data_str.split(",")
+                    if len(fields) < 32:
+                        continue
+                    price = float(fields[3]) if fields[3] else 0
+                    prev = float(fields[2]) if fields[2] else 0
+                    change_pct = round((price - prev) / prev * 100, 2) if prev > 0 else 0
+                    quote = {
+                        "代码": code,
+                        "名称": fields[0],
+                        "最新价": price,
+                        "涨跌幅": change_pct,
+                        "今开": float(fields[1]) if fields[1] else 0,
+                        "最高": float(fields[4]) if fields[4] else 0,
+                        "最低": float(fields[5]) if fields[5] else 0,
+                        "昨收": prev,
+                        "成交量": int(fields[8]) if fields[8] else 0,
+                        "成交额": float(fields[9]) if fields[9] else 0,
+                    }
+                except Exception:
+                    continue
+
+            if not quote:
+                self.send_json({"error": "未找到该股票"})
+                return
+
+            # 尝试获取近期新闻
+            news = []
+            try:
+                import akshare as ak
+                news_df = ak.stock_news_em(symbol=code)
+                for _, row in news_df.head(5).iterrows():
+                    news.append({
+                        "标题": row.get("标题", ""),
+                        "摘要": row.get("内容", "")[:120] + "...",
+                        "来源": row.get("来源", ""),
+                        "时间": row.get("发布时间", ""),
+                    })
+            except Exception:
+                pass
+
+            self.send_json({
+                "代码": code,
+                "行情": quote,
+                "新闻": news,
+                "分析": {
+                    "状态": "上涨" if change_pct > 0 else ("下跌" if change_pct < 0 else "平盘"),
+                    "波动": "剧烈" if abs(change_pct) > 5 else ("活跃" if abs(change_pct) > 2 else "平稳"),
+                }
             })
         except Exception as e:
             self.send_json({"error": str(e)})

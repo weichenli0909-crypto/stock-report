@@ -761,6 +761,7 @@ tr:hover {{ background:#334155; }}
     <button class="main-tab" onclick="switchTab('tab-news')">📰 舆情监测</button>
     <button class="main-tab" onclick="switchTab('tab-us')">🇺🇸 美股关联</button>
     <button class="main-tab" onclick="switchTab('tab-ai')">🤖 AI预测</button>
+    <button class="main-tab" onclick="switchTab('tab-search')">🔍 个股搜索</button>
 </div>
 
 <!-- ========== TAB 1: 今日概览 ========== -->
@@ -831,6 +832,17 @@ tr:hover {{ background:#334155; }}
 <h2>🤖 机器学习预测（未来3个交易日）</h2>
 <p style="color:#94a3b8;margin-bottom:12px;">基于历史半年数据，使用随机森林 + 梯度提升 + 岭回归集成模型预测</p>
 {build_predictions_html(pred_data)}
+</div>
+
+<!-- ========== TAB 8: 个股搜索 ========== -->
+<div id="tab-search" class="tab-panel">
+<h2>🔍 个股搜索分析</h2>
+<p style="color:#94a3b8;margin-bottom:16px;">输入任意A股6位代码，获取实时行情与简要分析（本地服务器支持全市场搜索）</p>
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <input type="text" id="searchInput" placeholder="输入股票代码，如 000001" maxlength="6" style="flex:1;min-width:200px;padding:12px 16px;border:1px solid #334155;border-radius:10px;background:#0f172a;color:#e2e8f0;font-size:15px;outline:none;">
+    <button onclick="doSearch()" style="padding:12px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">🔍 搜索分析</button>
+</div>
+<div id="searchResult"></div>
 </div>
 
 <div class="footer">
@@ -930,20 +942,69 @@ function pollStatus() {{
 // 显示上次刷新时间
 document.getElementById('refreshTime').textContent = '报告生成: {date_str}';
 
-/* ====== 实时行情自动更新（30秒轮询） ====== */
+/* ====== 实时行情自动更新（30秒轮询，直连新浪） ====== */
 const QUOTE_INTERVAL = 30000;
 let quoteTimer = null;
+const SINA_CODES = '{sina_codes_str}';
 
-function fetchQuotes() {{
-    fetch('/api/quotes')
-        .then(r => {{ if (!r.ok) throw new Error('网络错误'); return r.json(); }})
-        .then(data => {{
-            if (data.error) {{ console.warn('行情获取失败:', data.error); return; }}
-            updateQuotes(data);
-            document.getElementById('refreshTime').textContent =
-                '报告生成: {date_str} | 行情更新: ' + data.time;
-        }})
-        .catch(err => {{ console.warn('行情轮询失败:', err); }});
+function fetchSinaQuotes() {{
+    const scriptId = 'sina-quote-loader';
+    const oldScript = document.getElementById(scriptId);
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://hq.sinajs.cn/list=' + SINA_CODES;
+    script.onload = function() {{
+        const data = parseSinaQuotes();
+        updateQuotes(data);
+        const now = new Date().toLocaleTimeString();
+        document.getElementById('refreshTime').textContent =
+            '报告生成: {date_str} | 行情更新: ' + now;
+        script.remove();
+    }};
+    script.onerror = function() {{
+        console.warn('新浪行情加载失败');
+        script.remove();
+    }};
+    document.head.appendChild(script);
+}}
+
+function parseSinaQuotes() {{
+    const quotes = {{}};
+    const codes = SINA_CODES.split(',');
+    for (const sinaCode of codes) {{
+        const dataStr = window['hq_str_' + sinaCode];
+        if (!dataStr) continue;
+        const fields = dataStr.split(',');
+        if (fields.length < 5) continue;
+        const code6 = sinaCode.substring(2);
+        const name = fields[0];
+        const open = parseFloat(fields[1]) || 0;
+        const prevClose = parseFloat(fields[2]) || 0;
+        const price = parseFloat(fields[3]) || 0;
+        const high = parseFloat(fields[4]) || 0;
+        const low = parseFloat(fields[5]) || 0;
+        const volume = parseInt(fields[8]) || 0;
+        const amount = parseFloat(fields[9]) || 0;
+        const changePct = prevClose > 0 ? parseFloat(((price - prevClose) / prevClose * 100).toFixed(2)) : 0;
+        quotes[code6] = {{
+            name: name,
+            price: price,
+            open: open,
+            prev_close: prevClose,
+            high: high,
+            low: low,
+            volume: volume,
+            amount: amount,
+            change_pct: changePct,
+        }};
+    }}
+    return {{
+        time: new Date().toLocaleTimeString(),
+        count: Object.keys(quotes).length,
+        quotes: quotes,
+    }};
 }}
 
 function updateQuotes(data) {{
@@ -992,9 +1053,71 @@ function updateQuotes(data) {{
     if (amountEl) amountEl.textContent = (totalAmount / 1e8).toFixed(1) + '亿';
 }}
 
+function doSearch() {{
+    const code = document.getElementById('searchInput').value.trim();
+    const resultDiv = document.getElementById('searchResult');
+    if (!code || !/^\d{{6}}$/.test(code)) {{
+        resultDiv.innerHTML = '<p style="color:#fca5a5;">❌ 请输入6位数字股票代码</p>';
+        return;
+    }}
+    const known = document.querySelector('[data-stock-code="' + code + '"]');
+    if (known) {{
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-stocks').classList.add('active');
+        window.scrollTo({{top:0,behavior:'smooth'}});
+        setTimeout(() => {{ known.scrollIntoView({{behavior:'smooth',block:'center'}}); known.style.background='#1e3a5f'; setTimeout(()=>known.style.background='',2000); }}, 300);
+        return;
+    }}
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {{
+        resultDiv.innerHTML = '<p style="color:#94a3b8;">⏳ 正在分析...</p>';
+        fetch('/api/search?code=' + code)
+            .then(r => r.json())
+            .then(data => {{
+                if (data.error) {{ resultDiv.innerHTML = '<p style="color:#fca5a5;">❌ ' + data.error + '</p>'; return; }}
+                renderSearchResult(data);
+            }})
+            .catch(err => {{ resultDiv.innerHTML = '<p style="color:#fca5a5;">❌ 查询失败</p>'; }});
+    }} else {{
+        resultDiv.innerHTML = '<div class="stock-card"><p style="color:#94a3b8;">GitHub Pages 静态托管模式下无法实时查询任意股票。</p><p style="color:#94a3b8;margin-top:8px;">建议：</p><ul style="color:#cbd5e1;margin:8px 0;padding-left:20px;"><li>本地运行 <code style="background:#0f172a;padding:2px 6px;border-radius:4px;">python3 web_server.py</code> 后搜索任意股票</li><li>或访问 <a href="https://quote.eastmoney.com/concept/' + code + '.html" target="_blank" style="color:#60a5fa;">东方财富个股页面</a></li></ul></div>';
+    }}
+}}
+
+function renderSearchResult(data) {{
+    const q = data.行情;
+    const color = q.涨跌幅 >= 0 ? '#ef4444' : '#22c55e';
+    const sign = q.涨跌幅 >= 0 ? '+' : '';
+    let newsHtml = '';
+    if (data.新闻 && data.新闻.length > 0) {{
+        newsHtml = '<h3 style="margin-top:16px;">📰 相关新闻</h3>';
+        for (const n of data.新闻) {{
+            newsHtml += '<div class="news-card" style="margin:8px 0;"><div style="font-size:13px;font-weight:600;color:#e2e8f0;">' + n.标题 + '</div><div style="font-size:12px;color:#94a3b8;margin:4px 0;">' + n.摘要 + '</div><div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;"><span>' + n.来源 + '</span><span>' + n.时间 + '</span></div></div>';
+        }}
+    }}
+    document.getElementById('searchResult').innerHTML =
+        '<div class="stock-card">' +
+        '<div class="stock-header"><div><span class="stock-name">' + q.名称 + '</span><span class="stock-code">' + data.代码 + '</span></div>' +
+        '<div class="stock-price"><span class="price" style="color:' + color + ';">' + q.最新价.toFixed(2) + '</span><span style="color:' + color + ';font-size:15px;font-weight:bold;">' + sign + q.涨跌幅 + '%</span></div></div>' +
+        '<div class="stock-body" style="margin-top:12px;"><div class="stock-metrics" style="flex-direction:row;flex-wrap:wrap;gap:12px;">' +
+        '<div class="metric"><span class="metric-label">今开</span><span>' + q.今开.toFixed(2) + '</span></div>' +
+        '<div class="metric"><span class="metric-label">最高</span><span>' + q.最高.toFixed(2) + '</span></div>' +
+        '<div class="metric"><span class="metric-label">最低</span><span>' + q.最低.toFixed(2) + '</span></div>' +
+        '<div class="metric"><span class="metric-label">昨收</span><span>' + q.昨收.toFixed(2) + '</span></div>' +
+        '<div class="metric"><span class="metric-label">成交额</span><span>' + (q.成交额/1e8).toFixed(2) + '亿</span></div>' +
+        '</div></div>' +
+        '<div style="margin-top:12px;padding:10px;background:#0f172a;border-radius:8px;font-size:13px;color:#94a3b8;">状态: <span style="color:' + color + ';font-weight:bold;">' + data.分析.状态 + '</span> | 波动: ' + data.分析.波动 + '</div>' +
+        newsHtml +
+        '</div>';
+}}
+
+document.addEventListener('DOMContentLoaded', function() {{
+    const inp = document.getElementById('searchInput');
+    if (inp) inp.addEventListener('keypress', function(e) {{ if (e.key === 'Enter') doSearch(); }});
+}});
+
 // 启动自动刷新
-quoteTimer = setInterval(fetchQuotes, QUOTE_INTERVAL);
-fetchQuotes();
+quoteTimer = setInterval(fetchSinaQuotes, QUOTE_INTERVAL);
+fetchSinaQuotes();
 </script>
 </body></html>"""
 

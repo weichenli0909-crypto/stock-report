@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌌 AI/光通信 股票星空图 - 2026-04-28 18:03:11</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e2e8f0; }
+canvas { display: block; }
+
+/* ===== 标题栏 ===== */
+.header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 16px 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+}
+.header h1 {
+    font-size: 22px; font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    pointer-events: auto;
+}
+.header .subtitle { color: #64748b; font-size: 12px; margin-top: 4px; }
+
+/* ===== 板块筛选 ===== */
+.sector-panel {
+    position: fixed; left: 16px; top: 50%; transform: translateY(-50%);
+    z-index: 100; display: flex; flex-direction: column; gap: 6px;
+}
+.sector-btn {
+    padding: 8px 14px; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(15,23,42,0.8); backdrop-filter: blur(12px);
+    color: #94a3b8; font-size: 12px; font-weight: 600;
+    border-radius: 20px; cursor: pointer; transition: all 0.3s;
+    white-space: nowrap; text-align: left;
+}
+.sector-btn:hover { border-color: rgba(255,255,255,0.4); color: #e2e8f0; transform: translateX(4px); }
+.sector-btn.active { color: #fff; border-color: currentColor; box-shadow: 0 0 12px currentColor; }
+.sector-btn .dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 6px; vertical-align: middle;
+}
+.sector-btn .count {
+    font-size: 10px; color: #64748b; margin-left: 4px;
+}
+
+/* ===== 统计栏 ===== */
+.stats-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    padding: 12px 24px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+    display: flex; justify-content: center; gap: 32px;
+    pointer-events: none;
+}
+.stat-item { text-align: center; }
+.stat-value { font-size: 20px; font-weight: 700; }
+.stat-label { font-size: 10px; color: #64748b; margin-top: 2px; }
+.stat-up { color: #ef4444; }
+.stat-down { color: #22c55e; }
+.stat-blue { color: #60a5fa; }
+
+/* ===== Tooltip ===== */
+.tooltip {
+    position: fixed; z-index: 200; pointer-events: none;
+    padding: 12px 16px; min-width: 220px;
+    background: rgba(15,23,42,0.95); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    opacity: 0; transition: opacity 0.2s;
+    font-size: 12px; line-height: 1.6;
+}
+.tooltip.visible { opacity: 1; }
+.tooltip .tt-name { font-size: 15px; font-weight: 700; color: #f8fafc; }
+.tooltip .tt-code { color: #64748b; font-size: 11px; margin-left: 6px; }
+.tooltip .tt-sector { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-top: 4px; }
+.tooltip .tt-row { display: flex; justify-content: space-between; margin-top: 6px; }
+.tooltip .tt-label { color: #64748b; }
+.tooltip .tt-val { font-weight: 600; }
+
+/* ===== 详情面板 ===== */
+.detail-panel {
+    position: fixed; right: -380px; top: 50%; transform: translateY(-50%);
+    z-index: 150; width: 340px; max-height: 80vh;
+    background: rgba(15,23,42,0.95); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 24px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+}
+.detail-panel.open { right: 16px; }
+.detail-panel .dp-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: none;
+    color: #94a3b8; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.detail-panel .dp-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.detail-panel .dp-name { font-size: 22px; font-weight: 700; }
+.detail-panel .dp-code { color: #64748b; font-size: 13px; }
+.detail-panel .dp-change {
+    font-size: 36px; font-weight: 800; margin: 12px 0 4px;
+}
+.detail-panel .dp-price { color: #94a3b8; font-size: 14px; }
+.detail-panel .dp-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0;
+}
+.detail-panel .dp-cell {
+    background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px;
+}
+.detail-panel .dp-cell-label { font-size: 10px; color: #64748b; }
+.detail-panel .dp-cell-val { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.detail-panel .dp-section { margin-top: 16px; }
+.detail-panel .dp-section-title { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+.detail-panel .dp-biz { font-size: 13px; color: #cbd5e1; line-height: 1.6; }
+.detail-panel .dp-ai {
+    display: flex; align-items: center; gap: 12px; margin-top: 12px;
+    padding: 12px; background: rgba(96,165,250,0.1); border-radius: 10px;
+}
+.detail-panel .dp-ai-score { font-size: 28px; font-weight: 800; }
+.detail-panel .dp-ai-label { font-size: 11px; color: #64748b; }
+.detail-panel .dp-ai-bar {
+    flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;
+}
+.detail-panel .dp-ai-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+/* ===== 搜索框 ===== */
+.search-wrap {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+}
+.search-input {
+    width: 200px; padding: 8px 14px; border-radius: 20px;
+    background: rgba(15,23,42,0.8); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e2e8f0; font-size: 13px; outline: none;
+    transition: all 0.3s;
+}
+.search-input:focus { border-color: #60a5fa; width: 280px; box-shadow: 0 0 20px rgba(96,165,250,0.2); }
+.search-input::placeholder { color: #475569; }
+.search-results {
+    margin-top: 6px; max-height: 300px; overflow-y: auto;
+    border-radius: 12px; background: rgba(15,23,42,0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: none;
+}
+.search-results.visible { display: block; }
+.search-item {
+    padding: 8px 14px; cursor: pointer; font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s;
+}
+.search-item:hover { background: rgba(96,165,250,0.15); }
+.search-item .si-name { font-weight: 600; }
+.search-item .si-code { color: #64748b; font-size: 11px; margin-left: 6px; }
+.search-item .si-change { float: right; font-weight: 600; }
+
+/* ===== 操作提示 ===== */
+.hint {
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+    z-index: 50; padding: 8px 20px; border-radius: 20px;
+    background: rgba(15,23,42,0.7); color: #64748b; font-size: 11px;
+    backdrop-filter: blur(8px); pointer-events: none;
+    animation: hintFade 4s ease-in-out forwards;
+}
+@keyframes hintFade { 0%,70% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ===== 加载动画 ===== */
+.loading {
+    position: fixed; inset: 0; z-index: 999;
+    background: #000; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.8s;
+}
+.loading.done { opacity: 0; pointer-events: none; }
+.loading-text {
+    font-size: 18px; font-weight: 600; margin-top: 20px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.loading-ring {
+    width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #60a5fa; border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== 返回按钮 ===== */
+.back-btn {
+    position: fixed; bottom: 60px; right: 16px; z-index: 100;
+    padding: 8px 16px; border-radius: 20px;
+    background: rgba(15,23,42,0.8); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #94a3b8; font-size: 12px; cursor: pointer;
+    text-decoration: none; transition: all 0.3s;
+}
+.back-btn:hover { border-color: #60a5fa; color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+    <div class="loading-ring"></div>
+    <div class="loading-text">正在构建股票星空…</div>
+</div>
+
+<div class="header">
+    <h1>🌌 AI / 光通信板块 · 股票星空图</h1>
+    <div class="subtitle">2026-04-28 18:03:11 · 拖拽旋转 · 滚轮缩放 · 点击查看详情</div>
+</div>
+
+<div class="sector-panel" id="sectorPanel"></div>
+
+<div class="search-wrap">
+    <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索股票名称或代码…">
+    <div class="search-results" id="searchResults"></div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="detail-panel" id="detailPanel">
+    <button class="dp-close" id="dpClose">✕</button>
+    <div id="dpContent"></div>
+</div>
+
+<div class="hint">💡 拖拽旋转星空 · 滚轮缩放 · 悬停查看 · 点击查看详情 · 左侧筛选板块</div>
+
+<a class="back-btn" href="report.html">← 返回日报</a>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===== 数据 =====
+const STARS = [{"code": "002415", "name": "海康威视", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 47.49, "y": -5.7, "z": -1.11, "size": 1.33, "change": 2.0, "price": 34.65, "amount": 26.41, "volume": 76610657.0, "amplitude": 4.42, "high": 35.18, "low": 33.68, "glow": 0.42, "aiScore": 50, "upProb": 56.9, "signal": "中性 ⚪", "mainBiz": "视频监控产品及解决方案、智能物联AIoT", "highlight": "全球安防龙头，AI赋能智能物联转型，海外收入占比约35%"}, {"code": "603019", "name": "中科曙光", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 50.7, "y": 2.12, "z": 0.43, "size": 1.71, "change": -3.54, "price": 90.9, "amount": 58.42, "volume": 63257026.0, "amplitude": 4.49, "high": 94.69, "low": 90.46, "glow": 0.42, "aiScore": 50, "upProb": 57.6, "signal": "微看空 🟢", "mainBiz": "高端计算机、存储、云计算服务", "highlight": "国产算力龙头，与海光信息深度绑定，服务器+AI推理双轮驱动"}, {"code": "688256", "name": "寒武纪", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 44.48, "y": -5.64, "z": 2.72, "size": 1.99, "change": 1.31, "price": 1374.5, "amount": 103.83, "volume": 7453538.0, "amplitude": 4.8, "high": 1418.88, "low": 1353.78, "glow": 0.43, "aiScore": 50, "upProb": 56.7, "signal": "微看空 🟢", "mainBiz": "AI芯片设计（智能处理器IP、云端/边缘AI芯片）", "highlight": "国产AI芯片标杆，思元系列覆盖云边端，受益国产替代"}, {"code": "300474", "name": "景嘉微", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 42.37, "y": -3.61, "z": 1.59, "size": 0.66, "change": -2.45, "price": 62.12, "amount": 6.6, "volume": 10498023.0, "amplitude": 4.37, "high": 64.28, "low": 61.5, "glow": 0.42, "aiScore": 50, "upProb": 60.2, "signal": "看空 🟢🟢", "mainBiz": "GPU芯片设计、图形处理器", "highlight": "国产GPU先行者，JM9系列持续迭代，军民融合双线发展"}, {"code": "000977", "name": "浪潮信息", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 43.86, "y": 1.07, "z": 1.31, "size": 1.56, "change": -3.18, "price": 70.83, "amount": 42.84, "volume": 59967731.0, "amplitude": 3.68, "high": 73.06, "low": 70.37, "glow": 0.4, "aiScore": 50, "upProb": 55.5, "signal": "微看好 🔴", "mainBiz": "服务器、存储、AI计算平台", "highlight": "国内服务器出货量第一，AI服务器全线布局，运营商/互联网大客户"}, {"code": "000938", "name": "紫光股份", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 43.73, "y": 2.38, "z": 7.68, "size": 1.58, "change": -1.89, "price": 31.58, "amount": 44.52, "volume": 141452252.0, "amplitude": 3.98, "high": 32.28, "low": 31.0, "glow": 0.41, "aiScore": 50, "upProb": 54.1, "signal": "微看好 🔴", "mainBiz": "ICT基础设施（服务器、交换机、存储）", "highlight": "新华三母公司，企业级ICT龙头，算力网络全覆盖"}, {"code": "002230", "name": "科大讯飞", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 40.95, "y": -1.96, "z": 9.67, "size": 1.13, "change": -1.28, "price": 49.17, "amount": 17.31, "volume": 35086313.0, "amplitude": 2.27, "high": 50.03, "low": 48.9, "glow": 0.36, "aiScore": 50, "upProb": 67.3, "signal": "中性 ⚪", "mainBiz": "智能语音、AI平台、教育/医疗AI应用", "highlight": "国产AI大模型领军企业(星火大模型)，教育+医疗AI深度布局"}, {"code": "000066", "name": "中国长城", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 41.23, "y": 1.24, "z": 11.39, "size": 1.84, "change": 6.32, "price": 17.83, "amount": 76.48, "volume": 432241617.0, "amplitude": 9.66, "high": 18.2, "low": 16.58, "glow": 0.56, "aiScore": 50, "upProb": 55.5, "signal": "微看空 🟢", "mainBiz": "信创PC、服务器、网络安全", "highlight": "信创龙头，自主可控PC/服务器核心供应商"}, {"code": "600941", "name": "中国移动", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 37.88, "y": 5.68, "z": 7.39, "size": 0.7, "change": 0.55, "price": 96.03, "amount": 7.11, "volume": 7431305.0, "amplitude": 1.09, "high": 96.14, "low": 95.1, "glow": 0.33, "aiScore": 50, "upProb": 55.5, "signal": "看好 🔴🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "601138", "name": "工业富联", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 36.98, "y": 1.42, "z": 9.58, "size": 2.2, "change": 1.41, "price": 68.2, "amount": 161.05, "volume": 237139570.0, "amplitude": 3.08, "high": 68.99, "low": 66.92, "glow": 0.38, "aiScore": 50, "upProb": 54.7, "signal": "微看好 🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "688041", "name": "海光信息", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 33.27, "y": -5.45, "z": 6.23, "size": 1.93, "change": -2.45, "price": 289.0, "amount": 93.14, "volume": 31800789.0, "amplitude": 4.73, "high": 300.02, "low": 286.0, "glow": 0.43, "aiScore": 50, "upProb": 55.0, "signal": "看空 🟢🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "601728", "name": "中国电信", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 36.22, "y": -3.21, "z": 0.86, "size": 0.55, "change": -0.17, "price": 5.98, "amount": 5.26, "volume": 87920100.0, "amplitude": 1.17, "high": 6.01, "low": 5.94, "glow": 0.33, "aiScore": 50, "upProb": 54.2, "signal": "中性 ⚪", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "688795", "name": "摩尔线程", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 31.95, "y": -1.62, "z": 2.46, "size": 1.52, "change": 2.75, "price": 708.48, "amount": 39.36, "volume": 5478574.0, "amplitude": 7.77, "high": 740.0, "low": 686.45, "glow": 0.51, "aiScore": 50, "upProb": 54.4, "signal": "看空 🟢🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "688802", "name": "沐曦股份", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 36.04, "y": 5.24, "z": 1.48, "size": 1.2, "change": -0.02, "price": 724.01, "amount": 20.4, "volume": 2760021.0, "amplitude": 5.94, "high": 758.0, "low": 715.0, "glow": 0.46, "aiScore": 50, "upProb": 56.1, "signal": "微看好 🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "688008", "name": "澜起科技", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 34.94, "y": 2.75, "z": -0.48, "size": 2.06, "change": -2.52, "price": 173.61, "amount": 120.58, "volume": 69486273.0, "amplitude": 4.13, "high": 177.37, "low": 170.02, "glow": 0.41, "aiScore": 50, "upProb": 56.9, "signal": "微看空 🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "000063", "name": "中兴通讯", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 28.63, "y": 1.68, "z": -1.91, "size": 1.54, "change": -3.35, "price": 36.01, "amount": 41.09, "volume": 113250297.0, "amplitude": 3.17, "high": 37.0, "low": 35.82, "glow": 0.38, "aiScore": 50, "upProb": 57.4, "signal": "微看空 🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "300442", "name": "润泽科技", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 29.52, "y": 3.31, "z": -6.4, "size": 1.45, "change": -2.01, "price": 88.31, "amount": 34.14, "volume": 38247058.0, "amplitude": 3.78, "high": 91.5, "low": 88.09, "glow": 0.4, "aiScore": 50, "upProb": 54.0, "signal": "中性 ⚪", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "600050", "name": "中国联通", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 34.81, "y": -2.79, "z": -1.44, "size": 0.67, "change": 0.67, "price": 4.53, "amount": 6.64, "volume": 147176865.0, "amplitude": 1.56, "high": 4.55, "low": 4.48, "glow": 0.34, "aiScore": 50, "upProb": 61.1, "signal": "中性 ⚪", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "300857", "name": "协创数据", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 33.91, "y": -2.22, "z": -8.83, "size": 1.99, "change": 1.16, "price": 261.0, "amount": 103.86, "volume": 39453055.0, "amplitude": 8.56, "high": 276.0, "low": 253.91, "glow": 0.53, "aiScore": 50, "upProb": 44.4, "signal": "微看空 🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "002602", "name": "世纪华通", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 34.22, "y": -0.49, "z": -11.06, "size": 1.28, "change": 3.23, "price": 17.24, "amount": 23.84, "volume": 138145428.0, "amplitude": 5.33, "high": 17.61, "low": 16.72, "glow": 0.44, "aiScore": 50, "upProb": 58.9, "signal": "中性 ⚪", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "301165", "name": "锐捷网络", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 38.64, "y": -2.85, "z": -5.83, "size": 0.86, "change": -5.86, "price": 93.18, "amount": 9.88, "volume": 10485656.0, "amplitude": 6.52, "high": 98.95, "low": 92.5, "glow": 0.47, "aiScore": 50, "upProb": 53.6, "signal": "看空 🟢🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "000157", "name": "中联重科", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 41.99, "y": -3.37, "z": -5.96, "size": 0.74, "change": 2.02, "price": 8.09, "amount": 7.7, "volume": 95430369.0, "amplitude": 3.28, "high": 8.15, "low": 7.89, "glow": 0.39, "aiScore": 50, "upProb": 47.8, "signal": "看好 🔴🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "002049", "name": "紫光国微", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 39.09, "y": -5.43, "z": -2.33, "size": 1.37, "change": 1.46, "price": 74.43, "amount": 28.53, "volume": 37880347.0, "amplitude": 3.18, "high": 76.6, "low": 74.27, "glow": 0.38, "aiScore": 50, "upProb": 57.1, "signal": "看好 🔴🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "688047", "name": "龙芯中科", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 42.56, "y": -0.93, "z": -9.41, "size": 1.16, "change": -2.32, "price": 155.62, "amount": 18.57, "volume": 11750283.0, "amplitude": 5.37, "high": 162.36, "low": 153.8, "glow": 0.44, "aiScore": 50, "upProb": 57.8, "signal": "看空 🟢🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "300418", "name": "昆仑万维", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 49.34, "y": 0.35, "z": -7.91, "size": 1.17, "change": -3.07, "price": 49.6, "amount": 18.98, "volume": 37868577.0, "amplitude": 3.48, "high": 51.11, "low": 49.33, "glow": 0.39, "aiScore": 50, "upProb": 49.7, "signal": "看好 🔴🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "002236", "name": "大华股份", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 42.38, "y": 2.65, "z": -1.17, "size": 0.67, "change": -0.33, "price": 18.11, "amount": 6.76, "volume": 37187773.0, "amplitude": 3.03, "high": 18.49, "low": 17.94, "glow": 0.38, "aiScore": 50, "upProb": 57.2, "signal": "看空 🟢🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "301396", "name": "宏景科技", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 42.65, "y": 1.69, "z": -2.29, "size": 1.61, "change": 7.27, "price": 335.99, "amount": 47.67, "volume": 14575576.0, "amplitude": 13.38, "high": 346.4, "low": 304.5, "glow": 0.66, "aiScore": 50, "upProb": 26.3, "signal": "看好 🔴🔴", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "300454", "name": "深信服", "sector": "AI算力", "sectorColor": "#ff6b6b", "x": 47.88, "y": 5.45, "z": -2.4, "size": 1.2, "change": -3.77, "price": 114.67, "amount": 20.16, "volume": 17330080.0, "amplitude": 6.45, "high": 121.32, "low": 113.63, "glow": 0.47, "aiScore": 50, "upProb": 60.6, "signal": "看空 🟢🟢", "mainBiz": "AI算力相关", "highlight": "行业核心标的"}, {"code": "300308", "name": "中际旭创", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 28.11, "y": 3.19, "z": 36.12, "size": 2.4, "change": -3.74, "price": 825.0, "amount": 245.18, "volume": 29510905.0, "amplitude": 3.85, "high": 854.0, "low": 821.0, "glow": 0.4, "aiScore": 50, "upProb": 50.2, "signal": "看好 🔴🔴", "mainBiz": "高速光模块（800G/400G/相干光模块）", "highlight": "全球光模块龙头，800G份额领先，深度绑定北美云厂商(微软/谷歌)"}, {"code": "300502", "name": "新易盛", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 24.92, "y": 8.21, "z": 34.51, "size": 2.28, "change": -0.47, "price": 535.46, "amount": 190.45, "volume": 35795263.0, "amplitude": 5.76, "high": 548.0, "low": 517.01, "glow": 0.45, "aiScore": 50, "upProb": 51.2, "signal": "微看空 🟢", "mainBiz": "光模块（数通/电信/接入）", "highlight": "光模块第二梯队龙头，800G快速放量，客户结构持续优化"}, {"code": "688498", "name": "源杰科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 28.62, "y": 7.12, "z": 39.33, "size": 1.75, "change": 1.74, "price": 1442.67, "amount": 63.97, "volume": 4394573.0, "amplitude": 8.69, "high": 1517.0, "low": 1393.75, "glow": 0.53, "aiScore": 50, "upProb": 53.2, "signal": "看好 🔴🔴", "mainBiz": "光芯片（高速激光器芯片、探测器芯片）", "highlight": "国产光芯片核心供应商，25G/50G/100G光芯片量产，CPO概念标的"}, {"code": "688195", "name": "腾景科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 19.45, "y": 4.77, "z": 37.82, "size": 1.32, "change": -4.31, "price": 325.0, "amount": 25.69, "volume": 7817498.0, "amplitude": 7.36, "high": 345.0, "low": 320.0, "glow": 0.5, "aiScore": 50, "upProb": 45.5, "signal": "中性 ⚪", "mainBiz": "精密光学元件（滤光片、透镜、棱镜）", "highlight": "光通信精密光学件供应商，CPO/硅光方向布局"}, {"code": "002281", "name": "光迅科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 23.75, "y": 10.31, "z": 41.59, "size": 1.9, "change": 1.84, "price": 137.0, "amount": 86.78, "volume": 63576416.0, "amplitude": 7.8, "high": 140.99, "low": 130.5, "glow": 0.51, "aiScore": 50, "upProb": 47.2, "signal": "看好 🔴🔴", "mainBiz": "光器件、光模块、光子集成", "highlight": "国内光器件龙头，产品线最全，光芯片自给率高"}, {"code": "688048", "name": "长光华芯", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 20.34, "y": 11.56, "z": 44.19, "size": 1.72, "change": -5.3, "price": 364.59, "amount": 59.54, "volume": 16131092.0, "amplitude": 10.64, "high": 398.98, "low": 358.0, "glow": 0.58, "aiScore": 50, "upProb": 36.6, "signal": "看好 🔴🔴", "mainBiz": "高功率激光芯片、VCSEL芯片", "highlight": "国产VCSEL/EEL芯片龙头，光通信+激光雷达双赛道"}, {"code": "688313", "name": "仕佳光子", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 20.88, "y": 9.53, "z": 35.76, "size": 1.75, "change": -7.66, "price": 134.14, "amount": 63.13, "volume": 46037366.0, "amplitude": 10.89, "high": 147.88, "low": 132.06, "glow": 0.59, "aiScore": 50, "upProb": 44.1, "signal": "看空 🟢🟢", "mainBiz": "PLC光分路器芯片、AWG芯片、DFB激光器芯片", "highlight": "国产PLC芯片龙头，光无源+有源芯片双布局"}, {"code": "688205", "name": "德科立", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 16.97, "y": 7.23, "z": 42.0, "size": 1.6, "change": 6.95, "price": 253.01, "amount": 46.86, "volume": 18425257.0, "amplitude": 9.12, "high": 264.59, "low": 243.01, "glow": 0.54, "aiScore": 50, "upProb": 43.2, "signal": "微看空 🟢", "mainBiz": "光收发模块、光放大器、光传输子系统", "highlight": "光传输子系统领先企业，OCS/光放大器方向受益"}, {"code": "002475", "name": "立讯精密", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 16.83, "y": 3.55, "z": 40.27, "size": 2.17, "change": -2.9, "price": 69.88, "amount": 152.46, "volume": 215990814.0, "amplitude": 4.79, "high": 72.4, "low": 68.95, "glow": 0.43, "aiScore": 50, "upProb": 53.3, "signal": "中性 ⚪", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "688808", "name": "C联讯", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 19.04, "y": 4.64, "z": 37.63, "size": 1.5, "change": -1.71, "price": 864.99, "amount": 38.01, "volume": 4393883.0, "amplitude": 6.14, "high": 890.0, "low": 836.0, "glow": 0.46, "aiScore": 50, "upProb": 50, "signal": "", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "300757", "name": "罗博特科", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 13.07, "y": 6.88, "z": 35.89, "size": 1.34, "change": -2.4, "price": 506.05, "amount": 26.8, "volume": 5258798.0, "amplitude": 4.52, "high": 525.33, "low": 501.88, "glow": 0.42, "aiScore": 50, "upProb": 52.9, "signal": "微看空 🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "600584", "name": "长电科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 13.96, "y": 7.65, "z": 34.2, "size": 1.48, "change": -2.63, "price": 45.1, "amount": 36.49, "volume": 80439998.0, "amplitude": 3.73, "high": 46.49, "low": 44.76, "glow": 0.4, "aiScore": 50, "upProb": 56.9, "signal": "微看空 🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "002156", "name": "通富微电", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 16.31, "y": 8.12, "z": 35.9, "size": 1.71, "change": -1.86, "price": 50.25, "amount": 58.72, "volume": 115934440.0, "amplitude": 4.67, "high": 52.1, "low": 49.71, "glow": 0.42, "aiScore": 50, "upProb": 57.3, "signal": "看空 🟢🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "002179", "name": "中航光电", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 10.1, "y": 2.01, "z": 31.47, "size": 0.98, "change": -3.79, "price": 35.54, "amount": 12.68, "volume": 35483950.0, "amplitude": 3.6, "high": 36.65, "low": 35.32, "glow": 0.4, "aiScore": 50, "upProb": 57.1, "signal": "中性 ⚪", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "300620", "name": "光库科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 18.71, "y": 2.68, "z": 32.46, "size": 1.37, "change": -0.42, "price": 238.7, "amount": 28.9, "volume": 12036241.0, "amplitude": 4.43, "high": 245.63, "low": 235.0, "glow": 0.42, "aiScore": 50, "upProb": 52.5, "signal": "看空 🟢🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "603459", "name": "红板科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 17.65, "y": 9.79, "z": 28.33, "size": 1.0, "change": -0.87, "price": 62.99, "amount": 13.37, "volume": 20903086.0, "amplitude": 7.98, "high": 66.58, "low": 61.51, "glow": 0.51, "aiScore": 50, "upProb": 50, "signal": "", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "001267", "name": "汇绿生态", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 18.74, "y": 5.94, "z": 31.81, "size": 1.61, "change": 5.03, "price": 51.79, "amount": 47.3, "volume": 89863830.0, "amplitude": 6.55, "high": 54.24, "low": 51.01, "glow": 0.47, "aiScore": 50, "upProb": 51.4, "signal": "看好 🔴🔴", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "002185", "name": "华天科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 21.36, "y": 8.58, "z": 24.57, "size": 1.04, "change": -1.86, "price": 12.65, "amount": 14.6, "volume": 115562768.0, "amplitude": 3.34, "high": 12.89, "low": 12.46, "glow": 0.39, "aiScore": 50, "upProb": 65.8, "signal": "中性 ⚪", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "688167", "name": "炬光科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 22.58, "y": 4.94, "z": 28.17, "size": 1.12, "change": 1.47, "price": 366.19, "amount": 17.18, "volume": 4680461.0, "amplitude": 4.62, "high": 376.96, "low": 360.3, "glow": 0.42, "aiScore": 50, "upProb": 54.5, "signal": "看空 🟢🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "600330", "name": "天通股份", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 21.39, "y": 6.13, "z": 30.48, "size": 1.78, "change": -3.65, "price": 26.42, "amount": 67.5, "volume": 255760426.0, "amplitude": 9.01, "high": 27.9, "low": 25.43, "glow": 0.54, "aiScore": 50, "upProb": 43.7, "signal": "微看好 🔴", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "002025", "name": "航天电器", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 22.66, "y": 11.3, "z": 33.0, "size": 1.21, "change": -7.01, "price": 69.27, "amount": 20.69, "volume": 29342022.0, "amplitude": 5.6, "high": 73.4, "low": 69.23, "glow": 0.45, "aiScore": 50, "upProb": 53.3, "signal": "微看好 🔴", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "603306", "name": "华懋科技", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 27.89, "y": 1.79, "z": 32.4, "size": 0.93, "change": -1.67, "price": 92.23, "amount": 11.55, "volume": 12405771.0, "amplitude": 2.97, "high": 94.85, "low": 92.06, "glow": 0.38, "aiScore": 50, "upProb": 52.3, "signal": "看空 🟢🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "688102", "name": "斯瑞新材", "sector": "CPO(共封装光学)", "sectorColor": "#ffd93d", "x": 31.62, "y": 11.34, "z": 30.44, "size": 0.86, "change": 3.25, "price": 39.05, "amount": 10.02, "volume": 25595021.0, "amplitude": 7.4, "high": 40.6, "low": 37.8, "glow": 0.5, "aiScore": 50, "upProb": 56.5, "signal": "微看空 🟢", "mainBiz": "CPO(共封装光学)相关", "highlight": "行业核心标的"}, {"code": "300394", "name": "天孚通信", "sector": "光模块", "sectorColor": "#6bcb77", "x": -14.37, "y": 7.0, "z": 32.88, "size": 2.01, "change": -3.86, "price": 309.8, "amount": 108.04, "volume": 34565241.0, "amplitude": 4.29, "high": 321.64, "low": 307.8, "glow": 0.41, "aiScore": 50, "upProb": 53.7, "signal": "中性 ⚪", "mainBiz": "光无源器件（连接器、适配器、光纤准直器）", "highlight": "光连接龙头，产品切入800G/CPO/OCS，ASP持续提升"}, {"code": "300570", "name": "太辰光", "sector": "光模块", "sectorColor": "#6bcb77", "x": -16.02, "y": 14.94, "z": 37.29, "size": 1.4, "change": -4.81, "price": 142.62, "amount": 30.84, "volume": 21231114.0, "amplitude": 7.62, "high": 152.32, "low": 140.9, "glow": 0.5, "aiScore": 50, "upProb": 54.7, "signal": "看空 🟢🟢", "mainBiz": "光纤连接器、适配器、WDM器件", "highlight": "光纤连接器细分龙头，受益数据中心光连接需求增长"}, {"code": "603083", "name": "剑桥科技", "sector": "光模块", "sectorColor": "#6bcb77", "x": -13.4, "y": 9.15, "z": 39.88, "size": 1.76, "change": 1.04, "price": 155.19, "amount": 64.96, "volume": 40992669.0, "amplitude": 5.78, "high": 162.87, "low": 154.0, "glow": 0.45, "aiScore": 50, "upProb": 43.4, "signal": "微看好 🔴", "mainBiz": "宽带接入终端、光模块、5G小基站", "highlight": "光模块新势力，400G/800G快速切入，海外客户结构优"}, {"code": "300548", "name": "长芯博创", "sector": "光模块", "sectorColor": "#6bcb77", "x": -17.26, "y": 12.19, "z": 39.0, "size": 1.49, "change": -3.21, "price": 246.96, "amount": 37.3, "volume": 14969879.0, "amplitude": 5.76, "high": 259.68, "low": 244.98, "glow": 0.45, "aiScore": 50, "upProb": 48.3, "signal": "微看好 🔴", "mainBiz": "高速光模块、光器件", "highlight": "数通高速光模块企业，400G/800G布局，硅光方向布局"}, {"code": "301205", "name": "联特科技", "sector": "光模块", "sectorColor": "#6bcb77", "x": -16.16, "y": 10.76, "z": 44.98, "size": 1.11, "change": -2.78, "price": 252.36, "amount": 16.68, "volume": 6529669.0, "amplitude": 5.56, "high": 264.47, "low": 250.03, "glow": 0.45, "aiScore": 50, "upProb": 52.8, "signal": "微看空 🟢", "mainBiz": "以太网光模块、5G前传光模块", "highlight": "工业/企业网光模块细分龙头，5G前传+数通双驱动"}, {"code": "000988", "name": "华工科技", "sector": "光模块", "sectorColor": "#6bcb77", "x": -19.8, "y": 10.81, "z": 38.52, "size": 1.84, "change": -2.69, "price": 115.59, "amount": 76.36, "volume": 65553798.0, "amplitude": 4.1, "high": 119.25, "low": 114.38, "glow": 0.41, "aiScore": 50, "upProb": 52.3, "signal": "看好 🔴🔴", "mainBiz": "激光加工设备、光通信器件、传感器", "highlight": "激光+光通信双主业，光模块业务受益AI数据中心"}, {"code": "002384", "name": "东山精密", "sector": "光模块", "sectorColor": "#6bcb77", "x": -22.42, "y": 14.69, "z": 36.61, "size": 2.15, "change": -1.5, "price": 183.9, "amount": 146.44, "volume": 78953271.0, "amplitude": 4.92, "high": 190.2, "low": 181.01, "glow": 0.43, "aiScore": 50, "upProb": 43.2, "signal": "看好 🔴🔴", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "601231", "name": "环旭电子", "sector": "光模块", "sectorColor": "#6bcb77", "x": -24.53, "y": 11.75, "z": 39.13, "size": 1.01, "change": -2.12, "price": 38.81, "amount": 13.48, "volume": 34458522.0, "amplitude": 3.86, "high": 39.88, "low": 38.35, "glow": 0.4, "aiScore": 50, "upProb": 54.4, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "600703", "name": "三安光电", "sector": "光模块", "sectorColor": "#6bcb77", "x": -26.5, "y": 7.33, "z": 41.5, "size": 1.45, "change": -5.02, "price": 13.99, "amount": 33.68, "volume": 237375606.0, "amplitude": 5.16, "high": 14.68, "low": 13.92, "glow": 0.44, "aiScore": 50, "upProb": 52.5, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "003031", "name": "中瓷电子", "sector": "光模块", "sectorColor": "#6bcb77", "x": -24.85, "y": 10.81, "z": 38.76, "size": 1.05, "change": 0.47, "price": 127.5, "amount": 14.87, "volume": 11649581.0, "amplitude": 5.84, "high": 131.5, "low": 124.09, "glow": 0.46, "aiScore": 50, "upProb": 48.2, "signal": "看好 🔴🔴", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "688172", "name": "燕东微", "sector": "光模块", "sectorColor": "#6bcb77", "x": -24.7, "y": 12.17, "z": 34.77, "size": 1.0, "change": -8.5, "price": 39.53, "amount": 13.38, "volume": 33415681.0, "amplitude": 16.04, "high": 44.0, "low": 37.07, "glow": 0.73, "aiScore": 50, "upProb": 52.6, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "002429", "name": "兆驰股份", "sector": "光模块", "sectorColor": "#6bcb77", "x": -28.23, "y": 7.89, "z": 34.52, "size": 1.3, "change": -4.62, "price": 11.35, "amount": 24.94, "volume": 215379362.0, "amplitude": 6.22, "high": 12.01, "low": 11.27, "glow": 0.47, "aiScore": 50, "upProb": 53.3, "signal": "微看空 🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "600601", "name": "方正科技", "sector": "光模块", "sectorColor": "#6bcb77", "x": -20.35, "y": 9.52, "z": 35.5, "size": 1.39, "change": -2.93, "price": 11.6, "amount": 30.12, "volume": 260015886.0, "amplitude": 8.54, "high": 12.31, "low": 11.29, "glow": 0.53, "aiScore": 50, "upProb": 54.0, "signal": "微看空 🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "002428", "name": "云南锗业", "sector": "光模块", "sectorColor": "#6bcb77", "x": -22.85, "y": 6.99, "z": 34.6, "size": 1.74, "change": -4.29, "price": 69.68, "amount": 62.08, "volume": 88270950.0, "amplitude": 5.65, "high": 73.0, "low": 68.89, "glow": 0.45, "aiScore": 50, "upProb": 47.9, "signal": "看好 🔴🔴", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "600699", "name": "均胜电子", "sector": "光模块", "sectorColor": "#6bcb77", "x": -25.18, "y": 13.85, "z": 25.21, "size": 1.06, "change": -1.43, "price": 28.18, "amount": 14.98, "volume": 52129767.0, "amplitude": 4.34, "high": 29.33, "low": 28.09, "glow": 0.42, "aiScore": 50, "upProb": 54.9, "signal": "微看好 🔴", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "688536", "name": "思瑞浦", "sector": "光模块", "sectorColor": "#6bcb77", "x": -21.54, "y": 12.04, "z": 27.89, "size": 1.24, "change": 4.83, "price": 232.0, "amount": 21.82, "volume": 9379277.0, "amplitude": 9.13, "high": 242.4, "low": 222.2, "glow": 0.54, "aiScore": 50, "upProb": 50.5, "signal": "看好 🔴🔴", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "300102", "name": "乾照光电", "sector": "光模块", "sectorColor": "#6bcb77", "x": -18.18, "y": 4.88, "z": 26.43, "size": 1.13, "change": 2.33, "price": 32.5, "amount": 17.3, "volume": 53067667.0, "amplitude": 6.42, "high": 33.6, "low": 31.56, "glow": 0.47, "aiScore": 50, "upProb": 55.2, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "688097", "name": "博众精工", "sector": "光模块", "sectorColor": "#6bcb77", "x": -18.72, "y": 14.47, "z": 26.12, "size": 0.42, "change": -2.06, "price": 57.88, "amount": 4.02, "volume": 6910957.0, "amplitude": 2.93, "high": 59.17, "low": 57.44, "glow": 0.38, "aiScore": 50, "upProb": 51.8, "signal": "微看好 🔴", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "688388", "name": "嘉元科技", "sector": "光模块", "sectorColor": "#6bcb77", "x": -19.11, "y": 10.49, "z": 32.8, "size": 1.08, "change": 0.91, "price": 48.61, "amount": 15.81, "volume": 32636384.0, "amplitude": 6.95, "high": 49.8, "low": 46.45, "glow": 0.49, "aiScore": 50, "upProb": 53.6, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "002792", "name": "通宇通讯", "sector": "光模块", "sectorColor": "#6bcb77", "x": -12.89, "y": 6.89, "z": 29.22, "size": 1.14, "change": -6.17, "price": 42.27, "amount": 17.69, "volume": 41487146.0, "amplitude": 7.1, "high": 44.89, "low": 41.69, "glow": 0.49, "aiScore": 50, "upProb": 48.0, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "688400", "name": "凌云光", "sector": "光模块", "sectorColor": "#6bcb77", "x": -12.83, "y": 14.12, "z": 31.23, "size": 0.52, "change": -1.79, "price": 45.96, "amount": 4.88, "volume": 10635087.0, "amplitude": 4.21, "high": 47.1, "low": 45.13, "glow": 0.41, "aiScore": 50, "upProb": 53.3, "signal": "看空 🟢🟢", "mainBiz": "光模块相关", "highlight": "行业核心标的"}, {"code": "600498", "name": "烽火通信", "sector": "光通信", "sectorColor": "#4d96ff", "x": -36.47, "y": 5.79, "z": 1.08, "size": 1.75, "change": 1.36, "price": 52.3, "amount": 62.98, "volume": 121761445.0, "amplitude": 9.59, "high": 53.96, "low": 49.01, "glow": 0.56, "aiScore": 50, "upProb": 52.7, "signal": "看空 🟢🟢", "mainBiz": "光通信系统设备、光纤光缆", "highlight": "央企光通信设备商，运营商核心供应商，承担国家信息安全使命"}, {"code": "601869", "name": "长飞光纤", "sector": "光通信", "sectorColor": "#4d96ff", "x": -32.07, "y": 5.64, "z": 2.35, "size": 1.55, "change": -1.06, "price": 373.49, "amount": 41.96, "volume": 11231914.0, "amplitude": 3.49, "high": 381.16, "low": 368.0, "glow": 0.39, "aiScore": 50, "upProb": 52.3, "signal": "微看好 🔴", "mainBiz": "光纤预制棒、光纤光缆", "highlight": "全球最大光纤预制棒及光纤光缆供应商，产业链一体化优势明显"}, {"code": "600487", "name": "亨通光电", "sector": "光通信", "sectorColor": "#4d96ff", "x": -37.11, "y": 3.04, "z": 4.66, "size": 2.06, "change": -4.33, "price": 68.29, "amount": 121.42, "volume": 176584323.0, "amplitude": 5.49, "high": 71.6, "low": 67.68, "glow": 0.45, "aiScore": 50, "upProb": 46.9, "signal": "看好 🔴🔴", "mainBiz": "光纤光缆、海底光缆、智能电网", "highlight": "海缆龙头，受益海上风电+国际互联网海缆需求，光纤光缆量价齐升"}, {"code": "600522", "name": "中天科技", "sector": "光通信", "sectorColor": "#4d96ff", "x": -32.74, "y": 8.56, "z": 7.76, "size": 1.93, "change": -2.18, "price": 35.0, "amount": 92.6, "volume": 264772903.0, "amplitude": 6.88, "high": 36.46, "low": 34.0, "glow": 0.48, "aiScore": 50, "upProb": 49.7, "signal": "看好 🔴🔴", "mainBiz": "光纤光缆、海缆、新能源", "highlight": "光电缆+海缆双龙头，海上风电+海底光缆双重受益"}, {"code": "002491", "name": "通鼎互联", "sector": "光通信", "sectorColor": "#4d96ff", "x": -39.59, "y": 4.25, "z": 4.6, "size": 1.29, "change": -1.55, "price": 16.56, "amount": 24.37, "volume": 144584139.0, "amplitude": 6.66, "high": 17.36, "low": 16.24, "glow": 0.48, "aiScore": 50, "upProb": 49.7, "signal": "微看好 🔴", "mainBiz": "光纤光缆、通信设备", "highlight": "光纤光缆老牌企业，受益运营商网络建设"}, {"code": "600105", "name": "永鼎股份", "sector": "光通信", "sectorColor": "#4d96ff", "x": -37.76, "y": 11.81, "z": 7.42, "size": 1.92, "change": -7.56, "price": 44.85, "amount": 91.28, "volume": 198459850.0, "amplitude": 9.93, "high": 49.35, "low": 44.53, "glow": 0.56, "aiScore": 50, "upProb": 45.7, "signal": "看空 🟢🟢", "mainBiz": "光纤光缆、超导材料、量子通信", "highlight": "光缆+超导+量子通信概念，前沿技术布局"}, {"code": "300408", "name": "三环集团", "sector": "光通信", "sectorColor": "#4d96ff", "x": -39.79, "y": 4.0, "z": 5.51, "size": 1.56, "change": 7.89, "price": 81.68, "amount": 42.73, "volume": 53266731.0, "amplitude": 10.12, "high": 82.96, "low": 75.3, "glow": 0.57, "aiScore": 50, "upProb": 48.9, "signal": "微看好 🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "000725", "name": "京东方Ａ", "sector": "光通信", "sectorColor": "#4d96ff", "x": -44.07, "y": 9.33, "z": 6.37, "size": 1.1, "change": -1.43, "price": 4.15, "amount": 16.47, "volume": 395438634.0, "amplitude": 1.66, "high": 4.21, "low": 4.14, "glow": 0.34, "aiScore": 50, "upProb": 60.5, "signal": "微看好 🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "601868", "name": "中国能建", "sector": "光通信", "sectorColor": "#4d96ff", "x": -45.48, "y": 13.0, "z": 7.77, "size": 1.03, "change": -2.11, "price": 2.78, "amount": 14.3, "volume": 512032754.0, "amplitude": 1.76, "high": 2.83, "low": 2.78, "glow": 0.35, "aiScore": 50, "upProb": 50.6, "signal": "看好 🔴🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "002008", "name": "大族激光", "sector": "光通信", "sectorColor": "#4d96ff", "x": -42.66, "y": 10.53, "z": 2.68, "size": 1.73, "change": 0.53, "price": 105.22, "amount": 61.29, "volume": 57777050.0, "amplitude": 9.52, "high": 110.96, "low": 101.0, "glow": 0.55, "aiScore": 50, "upProb": 46.2, "signal": "微看好 🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "600674", "name": "川投能源", "sector": "光通信", "sectorColor": "#4d96ff", "x": -47.32, "y": 11.84, "z": 0.36, "size": 0.69, "change": 1.99, "price": 15.36, "amount": 7.0, "volume": 45842251.0, "amplitude": 2.19, "high": 15.38, "low": 15.05, "glow": 0.36, "aiScore": 50, "upProb": 59.3, "signal": "看好 🔴🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "300395", "name": "菲利华", "sector": "光通信", "sectorColor": "#4d96ff", "x": -46.95, "y": 4.05, "z": 0.16, "size": 1.37, "change": -1.48, "price": 107.09, "amount": 28.53, "volume": 26618759.0, "amplitude": 5.11, "high": 110.33, "low": 104.78, "glow": 0.44, "aiScore": 50, "upProb": 55.0, "signal": "看空 🟢🟢", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "600497", "name": "驰宏锌锗", "sector": "光通信", "sectorColor": "#4d96ff", "x": -43.62, "y": 11.35, "z": -2.45, "size": 0.8, "change": -2.89, "price": 8.73, "amount": 8.8, "volume": 100730098.0, "amplitude": 3.11, "high": 8.92, "low": 8.64, "glow": 0.38, "aiScore": 50, "upProb": 55.0, "signal": "微看空 🟢", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "002222", "name": "福晶科技", "sector": "光通信", "sectorColor": "#4d96ff", "x": -48.21, "y": 5.28, "z": -7.08, "size": 1.28, "change": -2.63, "price": 85.6, "amount": 24.09, "volume": 27903780.0, "amplitude": 4.08, "high": 88.59, "low": 85.0, "glow": 0.41, "aiScore": 50, "upProb": 52.8, "signal": "微看空 🟢", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "600869", "name": "远东股份", "sector": "光通信", "sectorColor": "#4d96ff", "x": -40.49, "y": 11.84, "z": -4.98, "size": 1.2, "change": 0.81, "price": 17.38, "amount": 20.06, "volume": 116142420.0, "amplitude": 7.02, "high": 17.89, "low": 16.68, "glow": 0.49, "aiScore": 50, "upProb": 52.1, "signal": "微看好 🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "603688", "name": "石英股份", "sector": "光通信", "sectorColor": "#4d96ff", "x": -39.71, "y": 7.06, "z": -7.0, "size": 1.13, "change": 3.8, "price": 54.91, "amount": 17.29, "volume": 31836934.0, "amplitude": 8.47, "high": 56.5, "low": 52.02, "glow": 0.53, "aiScore": 50, "upProb": 54.1, "signal": "看空 🟢🟢", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "301486", "name": "致尚科技", "sector": "光通信", "sectorColor": "#4d96ff", "x": -37.39, "y": 4.13, "z": -11.05, "size": 1.16, "change": -3.44, "price": 202.86, "amount": 18.43, "volume": 8901914.0, "amplitude": 6.67, "high": 214.71, "low": 200.69, "glow": 0.48, "aiScore": 50, "upProb": 53.2, "signal": "看好 🔴🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "603618", "name": "杭电股份", "sector": "光通信", "sectorColor": "#4d96ff", "x": -37.92, "y": 5.67, "z": -9.56, "size": 1.15, "change": -4.28, "price": 29.06, "amount": 18.09, "volume": 62521728.0, "amplitude": 7.58, "high": 30.06, "low": 27.76, "glow": 0.5, "aiScore": 50, "upProb": 43.7, "signal": "看好 🔴🔴", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "300747", "name": "锐科激光", "sector": "光通信", "sectorColor": "#4d96ff", "x": -34.56, "y": 6.17, "z": -6.25, "size": 0.73, "change": -3.54, "price": 34.05, "amount": 7.53, "volume": 21952471.0, "amplitude": 4.93, "high": 35.49, "low": 33.75, "glow": 0.43, "aiScore": 50, "upProb": 54.3, "signal": "中性 ⚪", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "300913", "name": "兆龙互连", "sector": "光通信", "sectorColor": "#4d96ff", "x": -36.69, "y": 8.88, "z": -2.09, "size": 0.4, "change": -2.53, "price": 52.88, "amount": 3.83, "volume": 7194757.0, "amplitude": 4.96, "high": 55.0, "low": 52.31, "glow": 0.43, "aiScore": 50, "upProb": 53.5, "signal": "微看空 🟢", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "300398", "name": "飞凯材料", "sector": "光通信", "sectorColor": "#4d96ff", "x": -37.92, "y": 12.47, "z": 0.28, "size": 1.11, "change": 2.5, "price": 31.55, "amount": 16.85, "volume": 53528239.0, "amplitude": 6.73, "high": 32.42, "low": 30.35, "glow": 0.48, "aiScore": 50, "upProb": 56.4, "signal": "微看空 🟢", "mainBiz": "光通信相关", "highlight": "行业核心标的"}, {"code": "002463", "name": "沪电股份", "sector": "PCB", "sectorColor": "#ff8c42", "x": -11.12, "y": 4.13, "z": -36.36, "size": 1.67, "change": -2.93, "price": 101.88, "amount": 53.84, "volume": 52507779.0, "amplitude": 4.02, "high": 105.33, "low": 101.11, "glow": 0.41, "aiScore": 50, "upProb": 54.9, "signal": "看好 🔴🔴", "mainBiz": "企业通讯市场板、汽车板、高频高速PCB", "highlight": "AI服务器PCB核心供应商，高速板技术领先，深度绑定英伟达产业链"}, {"code": "002916", "name": "深南电路", "sector": "PCB", "sectorColor": "#ff8c42", "x": -12.3, "y": 0.04, "z": -31.39, "size": 1.5, "change": -2.13, "price": 314.93, "amount": 38.02, "volume": 12091785.0, "amplitude": 4.3, "high": 321.84, "low": 308.0, "glow": 0.41, "aiScore": 50, "upProb": 51.1, "signal": "看好 🔴🔴", "mainBiz": "印制电路板、封装基板", "highlight": "PCB+封装基板双轮驱动，IC载板国产替代先锋"}, {"code": "600183", "name": "生益科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -12.42, "y": -0.32, "z": -31.15, "size": 1.61, "change": -0.07, "price": 76.62, "amount": 47.59, "volume": 62563826.0, "amplitude": 5.23, "high": 78.1, "low": 74.09, "glow": 0.44, "aiScore": 50, "upProb": 52.6, "signal": "微看空 🟢", "mainBiz": "覆铜板(CCL)、粘结片", "highlight": "覆铜板龙头，高频高速材料受益AI服务器需求，国产替代加速"}, {"code": "002938", "name": "鹏鼎控股", "sector": "PCB", "sectorColor": "#ff8c42", "x": -16.7, "y": -0.37, "z": -31.31, "size": 1.29, "change": -3.32, "price": 74.62, "amount": 24.37, "volume": 32433187.0, "amplitude": 5.49, "high": 78.01, "low": 73.77, "glow": 0.45, "aiScore": 50, "upProb": 49.6, "signal": "中性 ⚪", "mainBiz": "FPC柔性电路板、HDI板", "highlight": "全球FPC龙头，苹果核心供应商，AI终端/服务器新增量"}, {"code": "300476", "name": "胜宏科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -11.01, "y": 4.21, "z": -25.49, "size": 1.91, "change": -1.37, "price": 313.06, "amount": 89.17, "volume": 28377220.0, "amplitude": 3.62, "high": 320.78, "low": 309.28, "glow": 0.4, "aiScore": 50, "upProb": 54.4, "signal": "微看好 🔴", "mainBiz": "印制电路板（多层板、HDI板、高频高速板）", "highlight": "AI服务器PCB高增长标的，深度受益GB200/GB300服务器"}, {"code": "002436", "name": "兴森科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -19.65, "y": 2.65, "z": -31.07, "size": 1.55, "change": -4.62, "price": 27.88, "amount": 42.17, "volume": 149070289.0, "amplitude": 5.34, "high": 29.17, "low": 27.61, "glow": 0.44, "aiScore": 50, "upProb": 55.4, "signal": "微看好 🔴", "mainBiz": "PCB样板/小批量板、IC封装基板", "highlight": "PCB样板龙头+IC载板布局，受益先进封装趋势"}, {"code": "002815", "name": "崇达技术", "sector": "PCB", "sectorColor": "#ff8c42", "x": -17.7, "y": 3.04, "z": -28.71, "size": 0.48, "change": -3.2, "price": 15.12, "amount": 4.56, "volume": 29927296.0, "amplitude": 4.16, "high": 15.66, "low": 15.01, "glow": 0.41, "aiScore": 50, "upProb": 57.4, "signal": "微看空 🟢", "mainBiz": "多层PCB、HDI板、刚挠结合板", "highlight": "中高端PCB企业，产品结构持续升级，汽车电子+AI服务器受益"}, {"code": "603228", "name": "景旺电子", "sector": "PCB", "sectorColor": "#ff8c42", "x": -19.76, "y": -1.36, "z": -26.62, "size": 1.52, "change": -2.69, "price": 73.32, "amount": 39.43, "volume": 53736619.0, "amplitude": 5.31, "high": 75.99, "low": 71.99, "glow": 0.44, "aiScore": 50, "upProb": 53.4, "signal": "中性 ⚪", "mainBiz": "刚性PCB、柔性FPC、金属基板", "highlight": "PCB细分龙头，产品线全覆盖，汽车电子+服务器双受益"}, {"code": "603920", "name": "世运电路", "sector": "PCB", "sectorColor": "#ff8c42", "x": -23.27, "y": -1.88, "z": -24.75, "size": 1.12, "change": -5.43, "price": 53.1, "amount": 17.07, "volume": 31582969.0, "amplitude": 5.24, "high": 55.95, "low": 53.01, "glow": 0.44, "aiScore": 50, "upProb": 53.2, "signal": "看空 🟢🟢", "mainBiz": "多层PCB、HDI板", "highlight": "高多层板技术积累深，服务器/通信板占比提升"}, {"code": "600176", "name": "中国巨石", "sector": "PCB", "sectorColor": "#ff8c42", "x": -21.81, "y": 0.1, "z": -25.9, "size": 1.64, "change": 3.17, "price": 34.5, "amount": 50.92, "volume": 148405423.0, "amplitude": 5.71, "high": 35.37, "low": 33.46, "glow": 0.45, "aiScore": 50, "upProb": 54.1, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "000657", "name": "中钨高新", "sector": "PCB", "sectorColor": "#ff8c42", "x": -26.1, "y": -1.23, "z": -29.32, "size": 1.47, "change": -3.21, "price": 52.1, "amount": 35.66, "volume": 68115231.0, "amplitude": 6.26, "high": 54.5, "low": 51.13, "glow": 0.47, "aiScore": 50, "upProb": 52.1, "signal": "微看好 🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "603256", "name": "宏和科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -21.83, "y": 1.78, "z": -33.29, "size": 1.37, "change": 3.04, "price": 109.65, "amount": 28.73, "volume": 26228516.0, "amplitude": 8.66, "high": 113.42, "low": 104.2, "glow": 0.53, "aiScore": 50, "upProb": 54.5, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "688183", "name": "生益电子", "sector": "PCB", "sectorColor": "#ff8c42", "x": -26.49, "y": 3.64, "z": -30.69, "size": 1.18, "change": -3.98, "price": 115.9, "amount": 19.29, "volume": 16599890.0, "amplitude": 5.05, "high": 120.1, "low": 114.0, "glow": 0.43, "aiScore": 50, "upProb": 53.9, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "301377", "name": "鼎泰高科", "sector": "PCB", "sectorColor": "#ff8c42", "x": -25.96, "y": -0.99, "z": -34.4, "size": 0.73, "change": -2.48, "price": 223.0, "amount": 7.61, "volume": 3378910.0, "amplitude": 4.31, "high": 230.67, "low": 220.81, "glow": 0.41, "aiScore": 50, "upProb": 54.7, "signal": "中性 ⚪", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "002080", "name": "中材科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -31.03, "y": 5.32, "z": -33.91, "size": 1.36, "change": 2.52, "price": 53.38, "amount": 28.39, "volume": 53801290.0, "amplitude": 7.53, "high": 54.93, "low": 51.01, "glow": 0.5, "aiScore": 50, "upProb": 54.8, "signal": "中性 ⚪", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "301200", "name": "大族数控", "sector": "PCB", "sectorColor": "#ff8c42", "x": -23.67, "y": 7.57, "z": -36.85, "size": 0.65, "change": -1.68, "price": 185.1, "amount": 6.45, "volume": 3463480.0, "amplitude": 3.71, "high": 190.8, "low": 183.82, "glow": 0.4, "aiScore": 50, "upProb": 52.5, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "001389", "name": "广合科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -24.43, "y": 6.26, "z": -34.87, "size": 1.2, "change": -4.12, "price": 165.11, "amount": 20.06, "volume": 11978255.0, "amplitude": 6.39, "high": 175.0, "low": 164.0, "glow": 0.47, "aiScore": 50, "upProb": 52.0, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "301526", "name": "国际复材", "sector": "PCB", "sectorColor": "#ff8c42", "x": -27.05, "y": 7.93, "z": -37.31, "size": 1.57, "change": 3.18, "price": 15.92, "amount": 43.79, "volume": 280504203.0, "amplitude": 14.65, "high": 16.8, "low": 14.54, "glow": 0.69, "aiScore": 50, "upProb": 53.6, "signal": "看空 🟢🟢", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "601212", "name": "白银有色", "sector": "PCB", "sectorColor": "#ff8c42", "x": -27.05, "y": 3.43, "z": -42.13, "size": 0.6, "change": -2.23, "price": 7.46, "amount": 5.75, "volume": 77016196.0, "amplitude": 3.01, "high": 7.61, "low": 7.38, "glow": 0.38, "aiScore": 50, "upProb": 50.9, "signal": "中性 ⚪", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "301217", "name": "铜冠铜箔", "sector": "PCB", "sectorColor": "#ff8c42", "x": -24.19, "y": 2.65, "z": -42.2, "size": 1.51, "change": 15.28, "price": 59.15, "amount": 38.12, "volume": 67045657.0, "amplitude": 17.99, "high": 61.57, "low": 52.34, "glow": 0.78, "aiScore": 50, "upProb": 44.6, "signal": "看空 🟢🟢", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "603806", "name": "福斯特", "sector": "PCB", "sectorColor": "#ff8c42", "x": -23.51, "y": -0.81, "z": -40.36, "size": 0.91, "change": -1.64, "price": 18.59, "amount": 10.99, "volume": 58983666.0, "amplitude": 3.65, "high": 19.09, "low": 18.4, "glow": 0.4, "aiScore": 50, "upProb": 55.4, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "301511", "name": "德福科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -21.06, "y": 2.33, "z": -45.07, "size": 1.43, "change": 0.28, "price": 67.69, "amount": 32.41, "volume": 47575969.0, "amplitude": 6.65, "high": 70.79, "low": 66.3, "glow": 0.48, "aiScore": 50, "upProb": 44.5, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "688519", "name": "南亚新材", "sector": "PCB", "sectorColor": "#ff8c42", "x": -20.76, "y": -0.49, "z": -38.13, "size": 1.04, "change": 0.38, "price": 172.75, "amount": 14.36, "volume": 8087602.0, "amplitude": 8.12, "high": 185.97, "low": 172.0, "glow": 0.52, "aiScore": 50, "upProb": 53.1, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "603175", "name": "超颖电子", "sector": "PCB", "sectorColor": "#ff8c42", "x": -19.09, "y": -2.26, "z": -41.0, "size": 0.58, "change": -6.41, "price": 92.0, "amount": 5.62, "volume": 5971151.0, "amplitude": 6.13, "high": 98.0, "low": 91.97, "glow": 0.46, "aiScore": 50, "upProb": 53.9, "signal": "微看好 🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "601208", "name": "东材科技", "sector": "PCB", "sectorColor": "#ff8c42", "x": -16.12, "y": -3.15, "z": -42.48, "size": 1.22, "change": -1.33, "price": 35.59, "amount": 21.18, "volume": 59024774.0, "amplitude": 4.66, "high": 36.7, "low": 35.02, "glow": 0.42, "aiScore": 50, "upProb": 57.4, "signal": "中性 ⚪", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "002636", "name": "金安国纪", "sector": "PCB", "sectorColor": "#ff8c42", "x": -16.33, "y": -1.44, "z": -37.71, "size": 1.5, "change": 4.94, "price": 46.28, "amount": 37.51, "volume": 80514066.0, "amplitude": 9.46, "high": 48.51, "low": 44.34, "glow": 0.55, "aiScore": 50, "upProb": 53.3, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "688630", "name": "芯碁微装", "sector": "PCB", "sectorColor": "#ff8c42", "x": -12.33, "y": 4.43, "z": -38.32, "size": 0.96, "change": -2.22, "price": 264.0, "amount": 12.31, "volume": 4616226.0, "amplitude": 5.74, "high": 275.85, "low": 260.34, "glow": 0.45, "aiScore": 50, "upProb": 53.8, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "300806", "name": "斯迪克", "sector": "PCB", "sectorColor": "#ff8c42", "x": -15.33, "y": -3.85, "z": -36.06, "size": 0.93, "change": 2.0, "price": 72.01, "amount": 11.63, "volume": 16202348.0, "amplitude": 6.97, "high": 73.92, "low": 69.0, "glow": 0.49, "aiScore": 50, "upProb": 46.5, "signal": "看好 🔴🔴", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "605589", "name": "圣泉集团", "sector": "PCB", "sectorColor": "#ff8c42", "x": -10.04, "y": 7.52, "z": -35.92, "size": 1.17, "change": -4.66, "price": 37.85, "amount": 18.93, "volume": 49472277.0, "amplitude": 7.43, "high": 40.6, "low": 37.65, "glow": 0.5, "aiScore": 50, "upProb": 55.5, "signal": "看空 🟢🟢", "mainBiz": "PCB相关", "highlight": "行业核心标的"}, {"code": "000333", "name": "美的集团", "sector": "液冷", "sectorColor": "#00d2ff", "x": 24.43, "y": -4.12, "z": -35.76, "size": 1.29, "change": 1.19, "price": 80.45, "amount": 24.5, "volume": 30472906.0, "amplitude": 2.04, "high": 80.8, "low": 79.18, "glow": 0.35, "aiScore": 50, "upProb": 52.8, "signal": "微看好 🔴", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "300433", "name": "蓝思科技", "sector": "液冷", "sectorColor": "#00d2ff", "x": 23.76, "y": -9.0, "z": -31.96, "size": 1.16, "change": -4.08, "price": 25.62, "amount": 18.76, "volume": 72629504.0, "amplitude": 3.97, "high": 26.56, "low": 25.5, "glow": 0.41, "aiScore": 50, "upProb": 65.1, "signal": "微看好 🔴", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "002600", "name": "领益智造", "sector": "液冷", "sectorColor": "#00d2ff", "x": 22.97, "y": -7.85, "z": -32.69, "size": 1.0, "change": -3.32, "price": 13.96, "amount": 13.24, "volume": 93890260.0, "amplitude": 2.77, "high": 14.3, "low": 13.9, "glow": 0.37, "aiScore": 50, "upProb": 52.8, "signal": "中性 ⚪", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "600673", "name": "东阳光", "sector": "液冷", "sectorColor": "#00d2ff", "x": 21.44, "y": -9.02, "z": -28.63, "size": 1.31, "change": 2.28, "price": 33.22, "amount": 25.55, "volume": 76553766.0, "amplitude": 6.77, "high": 34.3, "low": 32.1, "glow": 0.48, "aiScore": 50, "upProb": 50.9, "signal": "看空 🟢🟢", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "601689", "name": "拓普集团", "sector": "液冷", "sectorColor": "#00d2ff", "x": 18.32, "y": -3.79, "z": -32.63, "size": 1.05, "change": -3.64, "price": 56.67, "amount": 14.64, "volume": 25558632.0, "amplitude": 3.38, "high": 58.5, "low": 56.51, "glow": 0.39, "aiScore": 50, "upProb": 55.9, "signal": "中性 ⚪", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "600160", "name": "巨化股份", "sector": "液冷", "sectorColor": "#00d2ff", "x": 17.68, "y": -6.03, "z": -33.32, "size": 1.07, "change": 0.95, "price": 36.22, "amount": 15.29, "volume": 42457077.0, "amplitude": 3.79, "high": 36.66, "low": 35.3, "glow": 0.4, "aiScore": 50, "upProb": 58.9, "signal": "微看好 🔴", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "002648", "name": "卫星化学", "sector": "液冷", "sectorColor": "#00d2ff", "x": 15.39, "y": -6.03, "z": -29.23, "size": 1.11, "change": 3.76, "price": 29.0, "amount": 16.62, "volume": 57849576.0, "amplitude": 6.08, "high": 29.35, "low": 27.65, "glow": 0.46, "aiScore": 50, "upProb": 48.4, "signal": "看好 🔴🔴", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "002837", "name": "英维克", "sector": "液冷", "sectorColor": "#00d2ff", "x": 14.52, "y": -8.55, "z": -33.73, "size": 1.43, "change": -3.29, "price": 92.84, "amount": 32.75, "volume": 34918839.0, "amplitude": 5.03, "high": 96.99, "low": 92.16, "glow": 0.43, "aiScore": 50, "upProb": 54.0, "signal": "看好 🔴🔴", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "300037", "name": "新宙邦", "sector": "液冷", "sectorColor": "#00d2ff", "x": 12.29, "y": -6.28, "z": -35.28, "size": 1.24, "change": -2.62, "price": 66.51, "amount": 22.08, "volume": 33300036.0, "amplitude": 3.18, "high": 67.45, "low": 65.28, "glow": 0.38, "aiScore": 50, "upProb": 47.1, "signal": "看好 🔴🔴", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "600378", "name": "昊华科技", "sector": "液冷", "sectorColor": "#00d2ff", "x": 16.75, "y": -2.84, "z": -39.51, "size": 0.57, "change": -0.59, "price": 35.59, "amount": 5.4, "volume": 15327803.0, "amplitude": 3.94, "high": 35.96, "low": 34.55, "glow": 0.41, "aiScore": 50, "upProb": 53.5, "signal": "中性 ⚪", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "002131", "name": "利欧股份", "sector": "液冷", "sectorColor": "#00d2ff", "x": 17.44, "y": -7.95, "z": -35.81, "size": 1.34, "change": -3.24, "price": 6.58, "amount": 27.1, "volume": 409385124.0, "amplitude": 3.68, "high": 6.79, "low": 6.54, "glow": 0.4, "aiScore": 50, "upProb": 56.7, "signal": "微看空 🟢", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "002261", "name": "拓维信息", "sector": "液冷", "sectorColor": "#00d2ff", "x": 20.21, "y": -7.4, "z": -39.21, "size": 1.81, "change": -8.54, "price": 35.03, "amount": 71.58, "volume": 202322750.0, "amplitude": 6.61, "high": 37.0, "low": 34.47, "glow": 0.48, "aiScore": 50, "upProb": 50.1, "signal": "看空 🟢🟢", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "300870", "name": "欧陆通", "sector": "液冷", "sectorColor": "#00d2ff", "x": 21.95, "y": -4.09, "z": -39.12, "size": 1.13, "change": -3.28, "price": 378.41, "amount": 17.42, "volume": 4583092.0, "amplitude": 5.62, "high": 395.0, "low": 373.01, "glow": 0.45, "aiScore": 50, "upProb": 47.3, "signal": "中性 ⚪", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "301236", "name": "软通动力", "sector": "液冷", "sectorColor": "#00d2ff", "x": 23.33, "y": -1.05, "z": -41.98, "size": 0.84, "change": -2.96, "price": 39.64, "amount": 9.55, "volume": 23891247.0, "amplitude": 4.16, "high": 41.1, "low": 39.4, "glow": 0.41, "aiScore": 50, "upProb": 53.9, "signal": "看空 🟢🟢", "mainBiz": "液冷相关", "highlight": "行业核心标的"}, {"code": "300017", "name": "网宿科技", "sector": "液冷", "sectorColor": "#00d2ff", "x": 25.51, "y": -3.49, "z": -36.69, "size": 1.4, "change": -4.38, "price": 16.15, "amount": 30.71, "volume": 188540159.0, "amplitude": 4.85, "high": 16.87, "low": 16.05, "glow": 0.43, "aiScore": 50, "upProb": 56.8, "signal": "中性 ⚪", "mainBiz": "液冷相关", "highlight": "行业核心标的"}];
+const SECTORS = [{"name": "AI算力", "color": "#ff6b6b", "x": 40.0, "y": 15.0, "z": 0.0, "count": 28, "desc": "AI算力板块是人工智能产业的基础设施层，提供AI训练和推理所需的计算能力。随着大模型和AIGC爆发，算力需求呈指数增长。", "driver": "大模型训练需求、推理部署扩张、国产替代"}, {"name": "CPO(共封装光学)", "color": "#ffd93d", "x": 20.0, "y": 21.69, "z": 34.64, "count": 23, "desc": "CPO(Co-Packaged Optics)是将光模块与交换芯片共封装的下一代互连技术，可大幅降低功耗和延迟，是800G/1.6T时代的关键技术路线。", "driver": "AI集群带宽需求、功耗瓶颈、1.6T升级周期"}, {"name": "光模块", "color": "#6bcb77", "x": -20.0, "y": 24.95, "z": 34.64, "count": 21, "desc": "光模块是数据中心和通信网络的核心器件，实现光电信号转换。当前正处于400G→800G→1.6T的升级大周期，AI训练集群是最大增量市场。", "driver": "AI算力扩张、800G/1.6T升级、海外云厂商资本开支"}, {"name": "光通信", "color": "#4d96ff", "x": -40.0, "y": 23.09, "z": 0.0, "count": 21, "desc": "光通信涵盖光纤光缆、光传输设备、光器件等，是信息传输的基础设施。AI时代对高速率、低延迟的光网络需求急剧增加。", "driver": "AI数据中心互连、运营商网络升级、海外市场拓展"}, {"name": "PCB", "color": "#ff8c42", "x": -20.0, "y": 17.08, "z": -34.64, "count": 29, "desc": "PCB(印制电路板)是电子产品的基础载体。AI服务器对高层数、高速率PCB需求大增，单机价值量是传统服务器的数倍。", "driver": "AI服务器高层板需求、HDI/封装基板升级、国产替代"}, {"name": "液冷", "color": "#00d2ff", "x": 20.0, "y": 10.0, "z": -34.64, "count": 15, "desc": "", "driver": ""}];
+
+// ===== Three.js 初始化 =====
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+// 相机初始位置
+camera.position.set(0, 30, 80);
+camera.lookAt(0, 0, 0);
+
+// ===== 轨道控制 =====
+// 简易 OrbitControls（内联实现，不依赖额外文件）
+const controls = {
+    target: new THREE.Vector3(0, 0, 0),
+    spherical: { radius: 80, phi: Math.PI / 3, theta: 0 },
+    isDragging: false,
+    prevMouse: { x: 0, y: 0 },
+    autoRotate: true,
+    autoRotateSpeed: 0.002,
+    dampingFactor: 0.05,
+    velocityTheta: 0,
+    velocityPhi: 0,
+
+    update() {
+        if (this.autoRotate && !this.isDragging) {
+            this.spherical.theta += this.autoRotateSpeed;
+        }
+        // 阻尼
+        this.spherical.theta += this.velocityTheta;
+        this.spherical.phi += this.velocityPhi;
+        this.velocityTheta *= (1 - this.dampingFactor);
+        this.velocityPhi *= (1 - this.dampingFactor);
+
+        // 限制 phi
+        this.spherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, this.spherical.phi));
+
+        const r = this.spherical.radius;
+        const phi = this.spherical.phi;
+        const theta = this.spherical.theta;
+        camera.position.set(
+            this.target.x + r * Math.sin(phi) * Math.cos(theta),
+            this.target.y + r * Math.cos(phi),
+            this.target.z + r * Math.sin(phi) * Math.sin(theta)
+        );
+        camera.lookAt(this.target);
+    }
+};
+
+// 鼠标交互
+renderer.domElement.addEventListener('mousedown', (e) => {
+    controls.isDragging = true;
+    controls.prevMouse = { x: e.clientX, y: e.clientY };
+    controls.autoRotate = false;
+});
+window.addEventListener('mousemove', (e) => {
+    if (controls.isDragging) {
+        const dx = e.clientX - controls.prevMouse.x;
+        const dy = e.clientY - controls.prevMouse.y;
+        controls.velocityTheta = -dx * 0.005;
+        controls.velocityPhi = dy * 0.005;
+        controls.prevMouse = { x: e.clientX, y: e.clientY };
+    }
+});
+window.addEventListener('mouseup', () => {
+    controls.isDragging = false;
+    // 5秒后恢复自动旋转
+    clearTimeout(controls._autoTimer);
+    controls._autoTimer = setTimeout(() => { controls.autoRotate = true; }, 5000);
+});
+renderer.domElement.addEventListener('wheel', (e) => {
+    controls.spherical.radius = Math.max(20, Math.min(200, controls.spherical.radius + e.deltaY * 0.05));
+});
+// 触摸支持
+renderer.domElement.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+        controls.isDragging = true;
+        controls.prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        controls.autoRotate = false;
+    }
+});
+renderer.domElement.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && controls.isDragging) {
+        const dx = e.touches[0].clientX - controls.prevMouse.x;
+        const dy = e.touches[0].clientY - controls.prevMouse.y;
+        controls.velocityTheta = -dx * 0.005;
+        controls.velocityPhi = dy * 0.005;
+        controls.prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+});
+renderer.domElement.addEventListener('touchend', () => {
+    controls.isDragging = false;
+    clearTimeout(controls._autoTimer);
+    controls._autoTimer = setTimeout(() => { controls.autoRotate = true; }, 5000);
+});
+
+// ===== 背景星空 =====
+function createBackground() {
+    const count = 3000;
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 500;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 500;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 500;
+        sizes[i] = Math.random() * 1.5;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    const mat = new THREE.PointsMaterial({
+        color: 0x334155,
+        size: 0.5,
+        transparent: true,
+        opacity: 0.6,
+        sizeAttenuation: true
+    });
+    scene.add(new THREE.Points(geo, mat));
+}
+
+// ===== 创建星星纹理 =====
+function createStarTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.15, 'rgba(255,255,255,0.8)');
+    gradient.addColorStop(0.4, 'rgba(255,255,255,0.3)');
+    gradient.addColorStop(0.7, 'rgba(255,255,255,0.05)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(canvas);
+}
+
+// ===== 涨跌幅转颜色（深浅表示幅度大小）=====
+function changeToColor(change) {
+    if (change > 0) {
+        // 涨：微涨偏粉，大涨深红/亮红
+        const t = Math.min(change / 10, 1);  // 0~1
+        const r = Math.round(180 + t * 75);  // 180→255
+        const g = Math.round(140 - t * 120); // 140→20
+        const b = Math.round(140 - t * 120); // 140→20
+        return new THREE.Color(`rgb(${r},${g},${b})`);
+    } else if (change < 0) {
+        // 跌：微跌偏浅绿，大跌深绿/亮绿
+        const t = Math.min(Math.abs(change) / 10, 1);
+        const r = Math.round(140 - t * 120); // 140→20
+        const g = Math.round(180 + t * 75);  // 180→255
+        const b = Math.round(140 - t * 120); // 140→20
+        return new THREE.Color(`rgb(${r},${g},${b})`);
+    }
+    return new THREE.Color(0x888888);  // 平盘灰色
+}
+
+// ===== 创建股票星星 =====
+const starMeshes = [];
+const starTexture = createStarTexture();
+let activeSector = null;
+
+function createStars() {
+    STARS.forEach((star, i) => {
+        // 核心球体
+        const geo = new THREE.SphereGeometry(star.size * 0.3, 16, 16);
+        const color = changeToColor(star.change);
+        const mat = new THREE.MeshBasicMaterial({ color });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(star.x, star.y, star.z);
+        mesh.userData = { ...star, index: i };
+        scene.add(mesh);
+
+        // 光晕 sprite
+        const spriteMat = new THREE.SpriteMaterial({
+            map: starTexture,
+            color: color,
+            transparent: true,
+            opacity: 0.3 + star.glow * 0.5,
+            blending: THREE.AdditiveBlending
+        });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.scale.set(star.size * 2.5, star.size * 2.5, 1);
+        sprite.position.copy(mesh.position);
+        sprite.userData = { parentIdx: i };
+        scene.add(sprite);
+
+        starMeshes.push({ mesh, sprite, data: star });
+    });
+}
+
+// ===== 板块连接线 =====
+function createConstellationLines() {
+    const sectorGroups = {};
+    STARS.forEach((s, i) => {
+        if (!sectorGroups[s.sector]) sectorGroups[s.sector] = [];
+        sectorGroups[s.sector].push(i);
+    });
+
+    Object.entries(sectorGroups).forEach(([sector, indices]) => {
+        if (indices.length < 2) return;
+        const color = new THREE.Color(SECTORS.find(s => s.name === sector)?.color || '#334155');
+
+        // 用最近邻连接（简化版）
+        const connected = new Set();
+        const points = [];
+
+        for (let i = 0; i < Math.min(indices.length, 30); i++) {
+            const a = STARS[indices[i]];
+            let bestDist = Infinity, bestJ = -1;
+            for (let j = i + 1; j < indices.length; j++) {
+                const b = STARS[indices[j]];
+                const d = Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2);
+                if (d < bestDist && d < 15) {
+                    bestDist = d; bestJ = j;
+                }
+            }
+            if (bestJ >= 0) {
+                const b = STARS[indices[bestJ]];
+                points.push(new THREE.Vector3(a.x, a.y, a.z));
+                points.push(new THREE.Vector3(b.x, b.y, b.z));
+            }
+        }
+
+        if (points.length > 0) {
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineBasicMaterial({
+                color, transparent: true, opacity: 0.12, linewidth: 1
+            });
+            const lines = new THREE.LineSegments(geo, mat);
+            lines.userData.sector = sector;
+            scene.add(lines);
+        }
+    });
+}
+
+// ===== 板块标签 =====
+function createSectorLabels() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    SECTORS.forEach(sector => {
+        canvas.width = 512;
+        canvas.height = 128;
+        ctx.clearRect(0, 0, 512, 128);
+        ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillStyle = sector.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(sector.name, 256, 50);
+        ctx.font = '20px sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`${sector.count} 只`, 256, 85);
+
+        const texture = new THREE.CanvasTexture(canvas.cloneNode(true).getContext('2d').canvas);
+        // 需要重新绘制到新 canvas
+        const c2 = document.createElement('canvas');
+        c2.width = 512; c2.height = 128;
+        const ctx2 = c2.getContext('2d');
+        ctx2.drawImage(canvas, 0, 0);
+        const tex = new THREE.CanvasTexture(c2);
+
+        const spriteMat = new THREE.SpriteMaterial({
+            map: tex, transparent: true, opacity: 0.8
+        });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.position.set(sector.x, sector.y, sector.z);
+        sprite.scale.set(20, 5, 1);
+        sprite.userData.sectorLabel = sector.name;
+        scene.add(sprite);
+    });
+}
+
+// ===== 雷射检测（悬停/点击）=====
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points = { threshold: 2 };
+const mouse = new THREE.Vector2();
+let hoveredStar = null;
+const tooltip = document.getElementById('tooltip');
+
+function formatAmount(val) {
+    if (val >= 10000) return (val / 10000).toFixed(1) + '万亿';
+    if (val >= 1) return val.toFixed(1) + '亿';
+    return (val * 10000).toFixed(0) + '万';
+}
+
+renderer.domElement.addEventListener('mousemove', (e) => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const meshes = starMeshes.map(s => s.mesh);
+    const intersects = raycaster.intersectObjects(meshes);
+
+    if (intersects.length > 0) {
+        const star = intersects[0].object.userData;
+        hoveredStar = star;
+        renderer.domElement.style.cursor = 'pointer';
+
+        const changeColor = star.change >= 0 ? '#ef4444' : '#22c55e';
+        const changeSign = star.change >= 0 ? '+' : '';
+
+        tooltip.innerHTML = `
+            <div class="tt-name">${star.name}<span class="tt-code">${star.code}</span></div>
+            <div class="tt-sector" style="background:${star.sectorColor}22;color:${star.sectorColor}">${star.sector}</div>
+            <div class="tt-row"><span class="tt-label">最新价</span><span class="tt-val">¥${star.price}</span></div>
+            <div class="tt-row"><span class="tt-label">涨跌幅</span><span class="tt-val" style="color:${changeColor}">${changeSign}${star.change}%</span></div>
+            <div class="tt-row"><span class="tt-label">成交额</span><span class="tt-val">${formatAmount(star.amount)}</span></div>
+            <div class="tt-row"><span class="tt-label">AI评分</span><span class="tt-val" style="color:${star.aiScore>=60?'#ef4444':star.aiScore<=40?'#22c55e':'#94a3b8'}">${star.aiScore}</span></div>
+        `;
+        tooltip.style.left = Math.min(e.clientX + 16, window.innerWidth - 250) + 'px';
+        tooltip.style.top = Math.min(e.clientY + 16, window.innerHeight - 200) + 'px';
+        tooltip.classList.add('visible');
+
+        // 高亮星星
+        const idx = star.index;
+        starMeshes[idx].sprite.material.opacity = 1;
+        starMeshes[idx].sprite.scale.set(star.size * 4, star.size * 4, 1);
+    } else {
+        if (hoveredStar) {
+            const idx = hoveredStar.index;
+            if (starMeshes[idx]) {
+                const s = starMeshes[idx].data;
+                starMeshes[idx].sprite.material.opacity = 0.3 + s.glow * 0.5;
+                starMeshes[idx].sprite.scale.set(s.size * 2.5, s.size * 2.5, 1);
+            }
+        }
+        hoveredStar = null;
+        tooltip.classList.remove('visible');
+        renderer.domElement.style.cursor = 'grab';
+    }
+});
+
+// ===== 点击详情 =====
+const detailPanel = document.getElementById('detailPanel');
+const dpContent = document.getElementById('dpContent');
+let selectedStar = null;
+
+renderer.domElement.addEventListener('click', (e) => {
+    if (controls.isDragging) return;
+    if (!hoveredStar) {
+        detailPanel.classList.remove('open');
+        selectedStar = null;
+        return;
+    }
+    const star = hoveredStar;
+    selectedStar = star;
+
+    const changeColor = star.change >= 0 ? '#ef4444' : '#22c55e';
+    const changeSign = star.change >= 0 ? '+' : '';
+    const aiColor = star.aiScore >= 60 ? '#ef4444' : star.aiScore <= 40 ? '#22c55e' : '#60a5fa';
+    const aiBarColor = star.aiScore >= 60 ? 'linear-gradient(90deg,#60a5fa,#ef4444)' : star.aiScore <= 40 ? 'linear-gradient(90deg,#60a5fa,#22c55e)' : 'linear-gradient(90deg,#3b82f6,#60a5fa)';
+
+    dpContent.innerHTML = `
+        <div class="dp-name">${star.name} <span class="dp-code">${star.code}</span></div>
+        <div style="margin-top:4px"><span style="padding:3px 10px;border-radius:10px;font-size:11px;background:${star.sectorColor}22;color:${star.sectorColor}">${star.sector}</span></div>
+        <div class="dp-change" style="color:${changeColor}">${changeSign}${star.change}%</div>
+        <div class="dp-price">¥${star.price} · 振幅 ${star.amplitude}%</div>
+
+        <div class="dp-grid">
+            <div class="dp-cell"><div class="dp-cell-label">成交额</div><div class="dp-cell-val" style="color:#60a5fa">${formatAmount(star.amount)}</div></div>
+            <div class="dp-cell"><div class="dp-cell-label">最高/最低</div><div class="dp-cell-val">¥${star.high} / ¥${star.low}</div></div>
+            <div class="dp-cell"><div class="dp-cell-label">上涨概率</div><div class="dp-cell-val" style="color:${star.upProb>55?'#ef4444':star.upProb<45?'#22c55e':'#94a3b8'}">${star.upProb}%</div></div>
+            <div class="dp-cell"><div class="dp-cell-label">AI信号</div><div class="dp-cell-val">${star.signal || '—'}</div></div>
+        </div>
+
+        <div class="dp-ai">
+            <div>
+                <div class="dp-ai-score" style="color:${aiColor}">${star.aiScore}</div>
+                <div class="dp-ai-label">AI综合评分</div>
+            </div>
+            <div style="flex:1">
+                <div class="dp-ai-bar"><div class="dp-ai-fill" style="width:${star.aiScore}%;background:${aiBarColor}"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#475569;margin-top:2px"><span>偏空</span><span>偏多</span></div>
+            </div>
+        </div>
+
+        ${star.mainBiz ? `<div class="dp-section"><div class="dp-section-title">主营业务</div><div class="dp-biz">${star.mainBiz}</div></div>` : ''}
+        ${star.highlight ? `<div class="dp-section"><div class="dp-section-title">核心亮点</div><div class="dp-biz" style="color:#fde047">${star.highlight}</div></div>` : ''}
+    `;
+    detailPanel.classList.add('open');
+
+    // 相机飞向星星
+    const targetPos = new THREE.Vector3(star.x, star.y, star.z);
+    animateCameraTo(targetPos, 30);
+});
+
+document.getElementById('dpClose').addEventListener('click', () => {
+    detailPanel.classList.remove('open');
+    selectedStar = null;
+});
+
+// ===== 相机动画 =====
+let cameraAnimation = null;
+
+function animateCameraTo(target, distance) {
+    const start = {
+        tx: controls.target.x, ty: controls.target.y, tz: controls.target.z,
+        radius: controls.spherical.radius
+    };
+    const end = { tx: target.x, ty: target.y, tz: target.z, radius: distance };
+    const duration = 1000;
+    const startTime = Date.now();
+
+    cameraAnimation = () => {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        controls.target.x = start.tx + (end.tx - start.tx) * ease;
+        controls.target.y = start.ty + (end.ty - start.ty) * ease;
+        controls.target.z = start.tz + (end.tz - start.tz) * ease;
+        controls.spherical.radius = start.radius + (end.radius - start.radius) * ease;
+
+        if (t >= 1) cameraAnimation = null;
+    };
+}
+
+// ===== 板块筛选 UI =====
+function buildSectorPanel() {
+    const panel = document.getElementById('sectorPanel');
+    let html = `<button class="sector-btn active" onclick="filterSector(null, this)">
+        <span class="dot" style="background:#fff"></span>全部<span class="count">${STARS.length}</span>
+    </button>`;
+    SECTORS.forEach(s => {
+        html += `<button class="sector-btn" onclick="filterSector('${s.name}', this)">
+            <span class="dot" style="background:${s.color}"></span>${s.name}<span class="count">${s.count}</span>
+        </button>`;
+    });
+    panel.innerHTML = html;
+}
+
+window.filterSector = function(sector, btn) {
+    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeSector = sector;
+
+    starMeshes.forEach(s => {
+        const visible = !sector || s.data.sector === sector;
+        s.mesh.visible = visible;
+        s.sprite.visible = visible;
+        if (visible && sector) {
+            s.sprite.material.opacity = 0.5 + s.data.glow * 0.5;
+        } else if (visible) {
+            s.sprite.material.opacity = 0.3 + s.data.glow * 0.5;
+        }
+    });
+
+    // 连接线
+    scene.children.forEach(child => {
+        if (child.userData?.sector) {
+            child.visible = !sector || child.userData.sector === sector;
+            if (child.visible && sector) child.material.opacity = 0.25;
+            else child.material.opacity = 0.12;
+        }
+        if (child.userData?.sectorLabel) {
+            child.visible = !sector || child.userData.sectorLabel === sector;
+        }
+    });
+
+    // 飞到板块中心
+    if (sector) {
+        const s = SECTORS.find(s => s.name === sector);
+        if (s) animateCameraTo(new THREE.Vector3(s.x, s.y - 15, s.z), 40);
+    } else {
+        animateCameraTo(new THREE.Vector3(0, 0, 0), 80);
+    }
+};
+
+// ===== 统计栏 =====
+function buildStatsBar() {
+    const upCount = STARS.filter(s => s.change > 0).length;
+    const downCount = STARS.filter(s => s.change < 0).length;
+    const flatCount = STARS.length - upCount - downCount;
+    const totalAmount = STARS.reduce((sum, s) => sum + s.amount, 0);
+    const avgChange = (STARS.reduce((sum, s) => sum + s.change, 0) / STARS.length).toFixed(2);
+    const avgChangeColor = avgChange >= 0 ? 'stat-up' : 'stat-down';
+
+    document.getElementById('statsBar').innerHTML = `
+        <div class="stat-item"><div class="stat-value stat-up">${upCount}</div><div class="stat-label">上涨</div></div>
+        <div class="stat-item"><div class="stat-value stat-down">${downCount}</div><div class="stat-label">下跌</div></div>
+        <div class="stat-item"><div class="stat-value" style="color:#94a3b8">${flatCount}</div><div class="stat-label">平盘</div></div>
+        <div class="stat-item"><div class="stat-value ${avgChangeColor}">${avgChange >= 0 ? '+' : ''}${avgChange}%</div><div class="stat-label">平均涨跌</div></div>
+        <div class="stat-item"><div class="stat-value stat-blue">${formatAmount(totalAmount)}</div><div class="stat-label">总成交额</div></div>
+        <div class="stat-item"><div class="stat-value" style="color:#a78bfa">${STARS.length}</div><div class="stat-label">星星总数</div></div>
+    `;
+}
+
+// ===== 搜索功能 =====
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { searchResults.classList.remove('visible'); return; }
+
+    const matches = STARS.filter(s =>
+        s.name.toLowerCase().includes(q) || s.code.includes(q)
+    ).slice(0, 8);
+
+    if (matches.length === 0) { searchResults.classList.remove('visible'); return; }
+
+    searchResults.innerHTML = matches.map(s => {
+        const changeColor = s.change >= 0 ? '#ef4444' : '#22c55e';
+        const sign = s.change >= 0 ? '+' : '';
+        return `<div class="search-item" data-code="${s.code}">
+            <span class="si-name">${s.name}</span><span class="si-code">${s.code}</span>
+            <span class="si-change" style="color:${changeColor}">${sign}${s.change}%</span>
+        </div>`;
+    }).join('');
+    searchResults.classList.add('visible');
+
+    searchResults.querySelectorAll('.search-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const code = item.dataset.code;
+            const star = STARS.find(s => s.code === code);
+            if (star) {
+                hoveredStar = star;
+                renderer.domElement.dispatchEvent(new MouseEvent('click'));
+                searchResults.classList.remove('visible');
+                searchInput.value = '';
+            }
+        });
+    });
+});
+
+searchInput.addEventListener('blur', () => {
+    setTimeout(() => searchResults.classList.remove('visible'), 200);
+});
+
+// ===== 动画脉冲 =====
+let time = 0;
+
+function animate() {
+    requestAnimationFrame(animate);
+    time += 0.01;
+
+    if (cameraAnimation) cameraAnimation();
+    controls.update();
+
+    // 星星呼吸脉冲
+    starMeshes.forEach((s, i) => {
+        const pulse = 1 + Math.sin(time * 2 + i * 0.5) * 0.08;
+        s.sprite.scale.set(
+            s.data.size * 2.5 * pulse,
+            s.data.size * 2.5 * pulse,
+            1
+        );
+    });
+
+    renderer.render(scene, camera);
+}
+
+// ===== 窗口大小适配 =====
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ===== 初始化 =====
+function init() {
+    createBackground();
+    createStars();
+    createConstellationLines();
+    createSectorLabels();
+    buildSectorPanel();
+    buildStatsBar();
+
+    // 开场动画：从远处飞入
+    controls.spherical.radius = 200;
+    setTimeout(() => {
+        const startR = 200;
+        const endR = 80;
+        const duration = 2000;
+        const startTime = Date.now();
+        function zoomIn() {
+            const t = Math.min((Date.now() - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - t, 3);
+            controls.spherical.radius = startR + (endR - startR) * ease;
+            if (t < 1) requestAnimationFrame(zoomIn);
+        }
+        zoomIn();
+    }, 300);
+
+    // 隐藏加载动画
+    setTimeout(() => {
+        document.getElementById('loading').classList.add('done');
+    }, 800);
+
+    animate();
+}
+
+init();
+</script>
+</body>
+</html>

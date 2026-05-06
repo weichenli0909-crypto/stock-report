@@ -66,7 +66,57 @@ def calc_features_for_stock(df):
     df["amplitude"] = (high - low) / close * 100
     df["volatility5"] = close.pct_change().rolling(5, min_periods=2).std() * 100
 
+    # ============== 🆕 v7.0 新增 8 个零成本因子 ==============
+    # 1. 成交额（近似值 = close × volume）
+    turnover = close * vol
+    df["turnover_20_ma"] = turnover.rolling(20, min_periods=10).mean()
+    df["turnover_change_5"] = turnover.rolling(5, min_periods=2).mean() / (
+        turnover.rolling(20, min_periods=10).mean() + 1
+    )
+
+    # 2. 价量相关性（20 日 rolling corr）
+    # 价涨量增为正相关，价涨量缩为负相关（反转预警）
+    ret = close.pct_change()
+    vol_change = vol.pct_change()
+    df["price_vol_corr_20"] = ret.rolling(20, min_periods=10).corr(vol_change)
+
+    # 3. MACD 柱状图（DIF - DEA）
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    dif = ema12 - ema26
+    dea = dif.ewm(span=9, adjust=False).mean()
+    df["MACD_hist"] = (dif - dea) / close * 100  # 标准化，避免股价量级影响
+
+    # 4. 布林带位置（0~100，50 = 中轨，100 = 上轨）
+    ma20 = close.rolling(20, min_periods=10).mean()
+    std20 = close.rolling(20, min_periods=10).std()
+    bb_upper = ma20 + 2 * std20
+    bb_lower = ma20 - 2 * std20
+    df["BB_position"] = (close - bb_lower) / (bb_upper - bb_lower + 1e-10) * 100
+
+    # 5. 平均真实波幅 ATR（趋势强度）
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    df["ATR_14"] = tr.rolling(14, min_periods=7).mean() / close * 100  # 标准化
+
+    # 6. Amihud 非流动性因子（|ret| / turnover，越大越不流动）
+    # 已被学术界验证的"流动性溢价"因子
+    df["amihud_illiq"] = (ret.abs() / (turnover + 1)).rolling(20, min_periods=10).mean() * 1e10
+
+    # 7. 夏普式收益波动比（20 日）
+    mean_ret_20 = ret.rolling(20, min_periods=10).mean()
+    std_ret_20 = ret.rolling(20, min_periods=10).std()
+    df["sharpe_ratio_20"] = mean_ret_20 / (std_ret_20 + 1e-6)
+
+    # 8. 价格加速度（近期动量 - 远期动量，捕捉加速上涨/下跌）
+    df["momentum_acceleration"] = close.pct_change(5) - close.pct_change(20)
+
     return df
+
 
 
 def add_market_sector_factors(panel_df, history_df, stock_groups):
@@ -191,27 +241,46 @@ def load_external_features(today_str):
 # ============ 多因子评分计算（v5.0 数据驱动） ============
 
 
-# 10 个基础因子到 5 大类的映射
+# 18 个基础因子到 6 大类的映射（v7.0：新增 8 个零成本因子）
 FACTOR_GROUPS = {
-    "momentum_score": ["动量_5日涨幅", "动量_20日涨幅"],
-    "relative_score": ["相对强弱_对大盘5日", "相对强弱_对板块5日"],
-    "vol_price_score": ["量价_成交量比", "量价_5日波动率", "量价_振幅"],
-    "location_score": ["位置_距20日高", "位置_距20日低", "位置_RSI14"],
+    "momentum_score": ["动量_5日涨幅", "动量_20日涨幅", "动量_加速度"],
+    "relative_score": ["相对强弱_对大盘5日", "相对强弱_对板块5日", "相对强弱_夏普20日"],
+    "vol_price_score": [
+        "量价_成交量比", "量价_5日波动率", "量价_振幅",
+        "量价_成交额环比", "量价_价量相关性20日", "量价_非流动性"
+    ],
+    "location_score": [
+        "位置_距20日高", "位置_距20日低", "位置_RSI14",
+        "位置_MACD柱", "位置_布林带", "位置_ATR14"
+    ],
 }
 
-# 因子名 -> 源列名
+# 因子名 -> 源列名（v7.0 扩充到 18 个）
 FACTOR_COLS = {
+    # 动量族
     "动量_5日涨幅": "ret_5d",
     "动量_20日涨幅": "ret_20d",
+    "动量_加速度": "momentum_acceleration",  # 🆕
+    # 相对强弱族
     "相对强弱_对大盘5日": "rel_to_market_5d",
     "相对强弱_对板块5日": "rel_to_sector_5d",
+    "相对强弱_夏普20日": "sharpe_ratio_20",  # 🆕
+    # 量价族
     "量价_成交量比": "vol_ratio",
     "量价_5日波动率": "volatility5",
     "量价_振幅": "amplitude",
+    "量价_成交额环比": "turnover_change_5",  # 🆕
+    "量价_价量相关性20日": "price_vol_corr_20",  # 🆕
+    "量价_非流动性": "amihud_illiq",  # 🆕
+    # 位置/技术族
     "位置_距20日高": "dist_to_high",
     "位置_距20日低": "dist_to_low",
     "位置_RSI14": "RSI14",
+    "位置_MACD柱": "MACD_hist",  # 🆕
+    "位置_布林带": "BB_position",  # 🆕
+    "位置_ATR14": "ATR_14",  # 🆕
 }
+
 
 # 默认因子方向 & 权重（IC 报告不存在时的兜底值）
 DEFAULT_DIRECTIONS = {name: +1 for name in FACTOR_COLS}

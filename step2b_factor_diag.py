@@ -26,6 +26,7 @@ from step2b_predict import calc_features_for_stock, add_market_sector_factors
 # ========= 原始因子定义 =========
 # (因子名, 列名, 当前方向假设: +1=正向用, -1=反向用)
 FACTOR_DEFS = [
+    # 原 v5.0 的 10 个因子
     ("动量_5日涨幅", "ret_5d", +1),
     ("动量_20日涨幅", "ret_20d", +1),
     ("相对强弱_对大盘5日", "rel_to_market_5d", +1),
@@ -36,7 +37,17 @@ FACTOR_DEFS = [
     ("位置_距20日高", "dist_to_high", +1),
     ("位置_距20日低", "dist_to_low", +1),
     ("位置_RSI14", "RSI14", +1),
+    # 🆕 v7.0 新增 8 个零成本因子
+    ("动量_加速度", "momentum_acceleration", +1),
+    ("相对强弱_夏普20日", "sharpe_ratio_20", +1),
+    ("量价_成交额环比", "turnover_change_5", +1),
+    ("量价_价量相关性20日", "price_vol_corr_20", +1),
+    ("量价_非流动性", "amihud_illiq", +1),
+    ("位置_MACD柱", "MACD_hist", +1),
+    ("位置_布林带", "BB_position", +1),
+    ("位置_ATR14", "ATR_14", +1),
 ]
+
 
 
 def load_history():

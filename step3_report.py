@@ -703,6 +703,32 @@ def build_news_html(news_data):
 
     overall = news_data.get("整体情绪", {})
     stocks_news = news_data.get("个股舆情", {})
+    llm_provider = news_data.get("llm_provider", "")
+    llm_time = news_data.get("llm_分析时间", "")
+
+    # 统计全市场 LLM 覆盖率
+    llm_total = 0
+    llm_pos = 0
+    llm_neg = 0
+    for _code, _data in stocks_news.items():
+        for _n in _data.get("新闻", []):
+            if _n.get("llm_score") is not None:
+                llm_total += 1
+                if _n.get("llm_score", 0) > 0:
+                    llm_pos += 1
+                elif _n.get("llm_score", 0) < 0:
+                    llm_neg += 1
+
+    llm_badge = ""
+    if llm_provider:
+        llm_badge = (
+            f'<div style="margin-top:6px;font-size:12px;color:#a78bfa">'
+            f'🤖 大模型点评：<b>{llm_provider.upper()}</b> 已点评 <b>{llm_total}</b> 条'
+            f'（<span style="color:#ef4444">利好 {llm_pos}</span> / '
+            f'<span style="color:#22c55e">利空 {llm_neg}</span>）'
+            f'{"｜" + llm_time if llm_time else ""}'
+            f'</div>'
+        )
 
     # 情绪概览
     html = f"""
@@ -719,6 +745,7 @@ def build_news_html(news_data):
                 <span style="color:#22c55e">负面 {overall.get('负面', 0)}</span> |
                 中性 {overall.get('中性', 0)}
             </div>
+            {llm_badge}
         </div>
     </div>"""
 
@@ -791,6 +818,33 @@ def build_news_html(news_data):
                 if link
                 else n["标题"]
             )
+            # 大模型点评（如果有）
+            llm_html = ""
+            llm_score = n.get("llm_score")
+            llm_reason = n.get("llm_reason", "")
+            if llm_score is not None:
+                if llm_score > 0:
+                    llm_color = "#ef4444"
+                    llm_label = "利好"
+                    llm_emoji = "📈"
+                elif llm_score < 0:
+                    llm_color = "#22c55e"
+                    llm_label = "利空"
+                    llm_emoji = "📉"
+                else:
+                    llm_color = "#94a3b8"
+                    llm_label = "中性"
+                    llm_emoji = "➖"
+                reason_text = f"：{llm_reason}" if llm_reason else ""
+                llm_html = (
+                    f'<div style="padding-left:22px;margin:6px 0;font-size:12px;'
+                    f'background:rgba(167,139,250,0.08);border-left:3px solid #a78bfa;'
+                    f'padding:8px 10px 8px 12px;border-radius:4px;margin-left:22px;">'
+                    f'<span style="color:#a78bfa;font-weight:600;">🤖 大模型点评</span> '
+                    f'<span style="color:{llm_color};font-weight:600;">{llm_emoji} {llm_label}（{llm_score:+d}）</span>'
+                    f'<span style="color:#cbd5e1;">{reason_text}</span>'
+                    f'</div>'
+                )
             html += f"""
                 <div class="news-card">
                     <div class="news-card-header">
@@ -799,6 +853,7 @@ def build_news_html(news_data):
                         {tags}
                     </div>
                     <div class="news-card-summary">{summary}</div>
+                    {llm_html}
                     <div class="news-card-footer">
                         <span class="news-source">{source}</span>
                         <span class="news-time">{n.get('时间', '')}</span>

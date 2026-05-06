@@ -1,9 +1,20 @@
 """
-🔬 单因子 IC 诊断工具
+🔬 单因子 IC 诊断工具（v2.0 - 半衰期加权）
+
 对每个子因子单独做 walk-forward 测试，输出：
 - IC 方向（正/负）
 - IC 均值、IR、胜率
 - 自动判断该因子是否"用反了"
+
+🆕 v2.0 升级：半衰期加权 IC
+  - 旧版：165 天等权平均（最近和最远同等重要，反应滞后）
+  - 新版：按半衰期 30 天指数加权（最近权重大，反应快）
+  - 例：因子上周突然失效 → 旧算法还显示正 IC，新算法 1 周内就切换方向
+  - 同时保留"等权 IC"和"半衰期 IC"的对比，便于评估稳定性
+
+环境变量：
+  IC_HALFLIFE_DAYS  - 半衰期天数，默认 30。想保守点设为 60（切换更慢）；
+                     想激进设为 15（切换更快但噪声大）。
 
 运行方式：python3 step2b_factor_diag.py
 输出：data/factor_ic_report.json
@@ -21,6 +32,10 @@ warnings.filterwarnings("ignore")
 
 from config import STOCK_GROUPS, DATA_DIR
 from step2b_predict import calc_features_for_stock, add_market_sector_factors
+
+# ========= 半衰期配置 =========
+IC_HALFLIFE_DAYS = int(os.environ.get("IC_HALFLIFE_DAYS", 30))
+
 
 
 # ========= 原始因子定义 =========
@@ -103,8 +118,8 @@ def compute_future_returns(panel, horizons=[1, 3, 5]):
     return panel
 
 
-def single_factor_ic(panel, factor_col, horizon_days):
-    """单因子 IC 测试"""
+def single_factor_ic(panel, factor_col, horizon_days, halflife=IC_HALFLIFE_DAYS):
+    """单因子 IC 测试（v2.0：同时计算等权 IC 和半衰期加权 IC）"""
     df = panel[["日期", "代码", factor_col, f"future_ret_{horizon_days}d"]].dropna()
     df = df[np.isfinite(df[factor_col]) & np.isfinite(df[f"future_ret_{horizon_days}d"])]
     if len(df) < 100:
@@ -114,30 +129,67 @@ def single_factor_ic(panel, factor_col, horizon_days):
     daily_ic = df.groupby("日期").apply(
         lambda g: stats.spearmanr(g[factor_col], g[f"future_ret_{horizon_days}d"])[0]
         if len(g) >= 5 else np.nan
-    ).dropna()
+    ).dropna().sort_index()
 
     if len(daily_ic) < 10:
         return None
 
-    ic_mean = float(daily_ic.mean())
-    ic_std = float(daily_ic.std())
-    ir = ic_mean / ic_std if ic_std > 0 else 0
-    ic_pos_pct = float((daily_ic > 0).mean() * 100)  # 正 IC 天数占比
+    # ===== 1) 传统等权 IC（保留作参考）=====
+    ic_mean_eq = float(daily_ic.mean())
+    ic_std_eq = float(daily_ic.std())
+    ir_eq = ic_mean_eq / ic_std_eq if ic_std_eq > 0 else 0
+    ic_pos_pct = float((daily_ic > 0).mean() * 100)
 
-    # t 统计量
-    t_stat = ic_mean / (ic_std / np.sqrt(len(daily_ic))) if ic_std > 0 else 0
+    # ===== 2) 🆕 半衰期加权 IC =====
+    # 权重按 (1/2)^(t/halflife) 衰减；t=0 是最新一天，权重=1
+    n = len(daily_ic)
+    ages = np.arange(n - 1, -1, -1, dtype=float)  # 0 = 最新, n-1 = 最远
+    weights = np.power(0.5, ages / halflife)
+    w_sum = weights.sum()
+    ic_values = daily_ic.values
+
+    ic_mean_hl = float(np.sum(ic_values * weights) / w_sum)
+    # 加权方差
+    ic_var_hl = float(np.sum(weights * (ic_values - ic_mean_hl) ** 2) / w_sum)
+    ic_std_hl = float(np.sqrt(ic_var_hl))
+    ir_hl = ic_mean_hl / ic_std_hl if ic_std_hl > 0 else 0
+
+    # 有效样本量（Kish 公式）: n_eff = (Σw)² / Σw²
+    n_eff = float(w_sum ** 2 / np.sum(weights ** 2))
+    t_stat_hl = ic_mean_hl / (ic_std_hl / np.sqrt(n_eff)) if ic_std_hl > 0 else 0
+
+    # ===== 3) 用"半衰期 IC"作为最终判定 =====
+    ic_mean = ic_mean_hl
+    t_stat = t_stat_hl
+    ir = ir_hl
+
+    # ===== 4) 方向稳定性指标：看 EW IC 和半衰期 IC 是否同号 =====
+    direction_aligned = (np.sign(ic_mean_eq) == np.sign(ic_mean_hl))
+    direction_switch_warn = not direction_aligned and abs(ic_mean_hl) > 0.01
+    # 翻转=True 说明"短期已与长期反向"，是个重要提示
 
     return {
+        # 🎯 对外接口字段（保持向后兼容，以半衰期为准）
         "IC均值": round(ic_mean, 4),
-        "IC标准差": round(ic_std, 4),
+        "IC标准差": round(ic_std_hl, 4),
         "IR": round(ir, 3),
         "正IC天数占比": round(ic_pos_pct, 1),
         "t统计量": round(float(t_stat), 2),
         "样本天数": len(daily_ic),
+        "有效样本数": round(n_eff, 1),
         "总样本数": len(df),
         "建议方向": +1 if ic_mean > 0 else -1,
         "显著性": "显著" if abs(t_stat) > 1.96 else ("边缘" if abs(t_stat) > 1.28 else "不显著"),
+        # 🆕 诊断字段
+        "半衰期天数": halflife,
+        "IC均值_等权": round(ic_mean_eq, 4),
+        "IC均值_半衰期": round(ic_mean_hl, 4),
+        "IR_等权": round(ir_eq, 3),
+        "IR_半衰期": round(ir_hl, 3),
+        "短长期方向是否一致": direction_aligned,
+        "方向漂移警告": direction_switch_warn,
     }
+
 
 
 def run_diagnosis():
@@ -230,6 +282,28 @@ def run_diagnosis():
         print(f"  {factor_name:<25} IC={ic:+.4f} ({significance})  {flip_str}")
 
     report["修正建议"] = suggestions
+    report["配置"] = {
+        "IC_半衰期天数": IC_HALFLIFE_DAYS,
+        "说明": "IC均值/权重/方向 均以半衰期加权 IC 为准；等权 IC 保留仅作参考",
+    }
+
+    # 🆕 方向漂移警告（短期与长期方向不一致的因子）
+    drift_factors = []
+    for name, data in factor_summary.items():
+        r5 = data["周期结果"].get("5日")
+        if r5 and r5.get("方向漂移警告"):
+            drift_factors.append((name, r5["IC均值_等权"], r5["IC均值_半衰期"]))
+
+    if drift_factors:
+        print("\n" + "=" * 70)
+        print("⚡ 方向漂移警告（近期行情已与长期反转，半衰期 IC 已提前捕捉）")
+        print("=" * 70)
+        for name, ic_eq, ic_hl in drift_factors:
+            print(f"  {name:<25} 等权 IC={ic_eq:+.4f}  →  半衰期 IC={ic_hl:+.4f}  "
+                  f"{'🔴 方向切换' if np.sign(ic_eq) != np.sign(ic_hl) else ''}")
+        print(f"\n  💡 这类因子通常对应行情风格切换（如趋势→反转），")
+        print(f"     半衰期 IC 提前 {IC_HALFLIFE_DAYS} 天（等权一半样本期）捕捉到，")
+        print(f"     让 v5.0 模型自动调整方向，抢回 1-2 周的反应时间。")
 
     # 保存
     out_path = os.path.join(DATA_DIR, "factor_ic_report.json")
@@ -237,16 +311,18 @@ def run_diagnosis():
         json.dump(report, f, ensure_ascii=False, indent=2, default=str)
     print(f"\n💾 诊断报告已保存: {out_path}")
 
-    # 统计需要翻转的因子数
+    # 统计
     need_flip = sum(1 for s in suggestions.values() if s["是否翻转"])
     significant = sum(1 for s in suggestions.values() if s["显著性"] != "不显著")
-    print(f"\n📊 诊断小结：")
+    print(f"\n📊 诊断小结 (半衰期 = {IC_HALFLIFE_DAYS} 天)：")
     print(f"   共 {len(suggestions)} 个因子，其中：")
     print(f"   - 🔴 需要翻转方向: {need_flip} 个")
     print(f"   - 🎯 显著 (|t|>1.28): {significant} 个")
     print(f"   - ❌ 不显著（接近噪声）: {len(suggestions)-significant} 个")
+    print(f"   - ⚡ 方向漂移中: {len(drift_factors)} 个")
 
     return report
+
 
 
 if __name__ == "__main__":

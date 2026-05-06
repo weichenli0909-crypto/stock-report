@@ -15,16 +15,54 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
-plt.rcParams["font.sans-serif"] = [
-    "Arial Unicode MS",  # macOS
-    "PingFang SC",  # macOS
-    "Noto Sans CJK SC",  # Linux (GitHub Actions)
-    "WenQuanYi Micro Hei",  # Linux 备选
-    "SimHei",  # Windows
-    "Microsoft YaHei",  # Windows
-]
-plt.rcParams["axes.unicode_minus"] = False
+
+def _setup_chinese_font():
+    """跨平台中文字体设置：按优先级尝试，找不到就直接扫描系统字体文件。"""
+    preferred = [
+        "Arial Unicode MS",  # macOS 内置
+        "PingFang SC",  # macOS
+        "Heiti SC",  # macOS 黑体
+        "Noto Sans CJK SC",  # Linux (GitHub Actions)
+        "Noto Sans CJK JP",
+        "Noto Serif CJK SC",
+        "WenQuanYi Zen Hei",  # Linux 备选
+        "WenQuanYi Micro Hei",
+        "Microsoft YaHei",  # Windows
+        "SimHei",
+        "SimSun",
+    ]
+    # 第一轮：按名称设置
+    plt.rcParams["font.sans-serif"] = preferred + plt.rcParams["font.sans-serif"]
+    plt.rcParams["axes.unicode_minus"] = False
+
+    # 第二轮：如果 font_manager 找不到上面任何字体，直接扫描系统字体文件路径
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    if not any(name in available for name in preferred):
+        # 典型的 Linux 中文字体路径
+        candidate_paths = [
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/opentype/noto/NotoSansCJK.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        ]
+        import os as _os
+        for p in candidate_paths:
+            if _os.path.exists(p):
+                try:
+                    font_manager.fontManager.addfont(p)
+                    fp = font_manager.FontProperties(fname=p)
+                    plt.rcParams["font.sans-serif"] = [fp.get_name()] + plt.rcParams["font.sans-serif"]
+                    print(f"  [字体] 已注册中文字体: {p} -> {fp.get_name()}")
+                    break
+                except Exception as e:
+                    print(f"  [字体] 注册失败 {p}: {e}")
+
+
+_setup_chinese_font()
+
 
 from config import STOCK_GROUPS, SECTOR_INFO, STOCK_PROFILES, DATA_DIR, OUTPUT_DIR
 

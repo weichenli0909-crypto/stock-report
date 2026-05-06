@@ -258,6 +258,11 @@ tr:last-child td { border-bottom:none; }
 .scroll-top.visible { opacity:1; transform:translateY(0); }
 .scroll-top:hover { transform:translateY(-3px) scale(1.1); box-shadow:0 6px 24px var(--accent-glow); }
 
+/* Event filter buttons */
+.evt-filter-btn{padding:6px 12px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-muted);border-radius:var(--radius-pill);cursor:pointer;font-size:12px;font-weight:500;transition:all 0.2s;}
+.evt-filter-btn:hover{border-color:var(--btn-color,var(--accent-light));color:var(--btn-color,var(--accent-light));}
+.evt-filter-btn.active{background:var(--btn-color,var(--accent));color:#fff;border-color:var(--btn-color,var(--accent));}
+
 /* ===== Mobile Responsive ===== */
 @media (max-width: 768px) {
     .site-header { padding:12px 16px; }
@@ -4975,7 +4980,8 @@ tr:last-child td { border-bottom:none; }
             </div>
             <button onclick="toggleEventPanel(this,'aEventsMore')" style="padding:6px 14px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-muted);border-radius:var(--radius-pill);cursor:pointer;font-size:12px;">展开全部 ▼</button>
         </div>
-        <div style="display:grid;gap:8px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"><button class="evt-filter-btn active" onclick="filterEventByType('all',this,'aEventsList')">全部</button><button class="evt-filter-btn" onclick="filterEventByType('财报',this,'aEventsList')" style="--btn-color:#64748b;">⚡财报 <span style="opacity:0.7">503</span></button><button class="evt-filter-btn" onclick="filterEventByType('股东变动',this,'aEventsList')" style="--btn-color:#64748b;">⚡股东变动 <span style="opacity:0.7">246</span></button><button class="evt-filter-btn" onclick="filterEventByType('产品/技术',this,'aEventsList')" style="--btn-color:#64748b;">⚡产品/技术 <span style="opacity:0.7">225</span></button><button class="evt-filter-btn" onclick="filterEventByType('订单/合同',this,'aEventsList')" style="--btn-color:#64748b;">⚡订单/合同 <span style="opacity:0.7">28</span></button><button class="evt-filter-btn" onclick="filterEventByType('融资',this,'aEventsList')" style="--btn-color:#64748b;">⚡融资 <span style="opacity:0.7">18</span></button><button class="evt-filter-btn" onclick="filterEventByType('收购/并购',this,'aEventsList')" style="--btn-color:#64748b;">⚡收购/并购 <span style="opacity:0.7">17</span></button><button class="evt-filter-btn" onclick="filterEventByType('监管/处罚',this,'aEventsList')" style="--btn-color:#64748b;">⚡监管/处罚 <span style="opacity:0.7">1</span></button></div>
+        <div id="aEventsList" style="display:grid;gap:8px;">
             <div>
                 <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
                     <div style="flex-shrink:0;text-align:center;min-width:60px;">
@@ -25965,12 +25971,28 @@ function toggleTheme() {
     }
 })();
 
-/* ====== Event Panel Toggle ====== */
+/* ====== Event Panel Toggle & Filter ====== */
 function toggleEventPanel(btn, className) {
     const items = document.querySelectorAll('.' + className);
     const allHidden = items.length > 0 && items[0].style.display === 'none';
     items.forEach(el => { el.style.display = allHidden ? '' : 'none'; });
     btn.textContent = allHidden ? '收起 ▲' : '展开全部 ▼';
+}
+function filterEventByType(type, btn, containerId) {
+    // 更新按钮状态
+    btn.parentElement.querySelectorAll('.evt-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // 筛选事件项
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll(':scope > div').forEach(el => {
+        if (type === 'all') {
+            el.style.display = '';
+        } else {
+            const text = el.textContent || '';
+            el.style.display = text.includes(type) ? '' : 'none';
+        }
+    });
 }
 
 /* ====== Scroll to Top Button ====== */

@@ -209,16 +209,28 @@ def load_external_features(today_str):
         try:
             with open(news_path, "r", encoding="utf-8") as f:
                 news = json.load(f)
+            has_llm = bool(news.get("llm_分析时间"))
+            if has_llm:
+                print(f"  🧠 使用 LLM 舆情分析 ({news.get('llm_provider', '?')}/{news.get('llm_model', '?')})")
             for code, data in news.get("个股舆情", {}).items():
                 code = str(code).zfill(6)
-                stats = data.get("情绪统计", {})
-                total = stats.get("正面", 0) + stats.get("负面", 0) + stats.get("中性", 0)
-                sentiment = (stats.get("正面", 0) - stats.get("负面", 0)) / total if total > 0 else 0
+                # 🆕 优先用 LLM 情绪分（-2~+2 → 归一到 -1~+1），fallback 关键词法
+                llm_stats = data.get("llm_情绪统计")
+                if llm_stats and llm_stats.get("条数", 0) > 0:
+                    sentiment = llm_stats.get("平均分", 0) / 2.0  # [-2,2] → [-1,1]
+                    sentiment_source = "llm"
+                else:
+                    stats = data.get("情绪统计", {})
+                    total = stats.get("正面", 0) + stats.get("负面", 0) + stats.get("中性", 0)
+                    sentiment = (stats.get("正面", 0) - stats.get("负面", 0)) / total if total > 0 else 0
+                    sentiment_source = "keyword"
                 if code not in features:
                     features[code] = {}
                 features[code]["news_sentiment"] = sentiment
+                features[code]["sentiment_source"] = sentiment_source
         except Exception:
             pass
+
 
     us_path = os.path.join(DATA_DIR, f"us_stocks_{today_str}.json")
     if os.path.exists(us_path):

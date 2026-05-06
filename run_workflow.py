@@ -66,7 +66,19 @@ def run_full_workflow():
     except Exception as e:
         print(f"\n⚠️ 舆情采集出错（非致命，继续）: {e}")
 
+    # Step 2.5: 🧠 LLM 语义化舆情（若有 API key 则升级，否则保持关键词法）
+    print("\n" + "━" * 60)
+    print(f"  🔶 STEP 2.5 / {total_steps} : 🧠 LLM 语义化舆情（可选）")
+    print("━" * 60)
+    try:
+        from step1b_llm_sentiment import run_llm_sentiment
+
+        run_llm_sentiment()
+    except Exception as e:
+        print(f"\n⚠️ LLM 舆情出错（非致命，继续使用关键词法）: {e}")
+
     # Step 3: 美股采集
+
     print("\n" + "━" * 60)
     print(f"  🔶 STEP 3 / {total_steps} : 美股关联标的采集")
     print("━" * 60)

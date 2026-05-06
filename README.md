@@ -175,10 +175,10 @@ https://github.com/你的用户名/stock-report
 1. 在你的仓库页面，点击顶部的 **Settings**（设置）标签
 2. 在左侧菜单找到 **Pages**，点进去
 3. 在 "Build and deployment" 这一栏：
-   - **Source**：选 `Deploy from a branch`
-   - **Branch**：选 `gh-pages`，右边的文件夹选 `/ (root)`
-4. 点 **Save**（保存）
-5. ✅ 完成
+   - **Source**：选 **GitHub Actions**（不是 "Deploy from a branch"！）
+4. ✅ 完成（不用选分支，不用点 Save，选了就自动生效）
+
+> 💡 **为什么选 GitHub Actions？** 因为项目里已经配好了自动部署脚本（`deploy-pages.yml`），每次报告更新后会自动部署到 Pages，比旧方式更快更稳定。
 
 **你的专属报告网址会是**：
 ```

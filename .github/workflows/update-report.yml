@@ -13,9 +13,13 @@ permissions:
 jobs:
   update-report:
     runs-on: ubuntu-latest
+    env:
+      # 🌍 强制整个 Job 使用北京时间，避免 datetime.now() 显示 UTC 早上 7 点
+      TZ: Asia/Shanghai
 
     steps:
       - name: 📥 拉取代码
+
         uses: actions/checkout@v4
         with:
           ref: gh-pages

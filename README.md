@@ -1,331 +1,318 @@
-# 📊 AI / 光通信板块 — 股票数据工作流
+# 📊 AI / 光通信板块 — 股票日报自动化工具
 
-> 每日自动采集 **AI算力 · CPO · 光模块 · 光通信 · OCS · PCB** 板块的 A 股 + 美股关联标的数据，进行多维度分析、机器学习预测，并生成精美的可视化暗色主题日报。
+> **完全不懂电脑也能用！** 每天自动生成 AI / CPO / 光模块 / 光通信 板块深度日报。
 
-![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-
----
-
-## ✨ 功能亮点
-
-- 🔄 **一键运行** — 一条命令完成 数据采集 → 舆情分析 → 美股联动 → 数据分析 → ML预测 → 报告生成
-- 📰 **舆情追踪** — 自动采集板块新闻，分析市场情绪（利好/利空/中性）
-- 🇺🇸 **美股联动** — 追踪英伟达、博通、微软等 10 只美股，映射 A 股关联个股
-- 🤖 **机器学习预测** — 随机森林 + 梯度提升模型预测次日涨跌概率
-- 📊 **精美报告** — 暗色主题 HTML 报告，包含图表、产业链分析、个股档案
-- ⏰ **定时监控** — 盘中自动刷新，实时跟踪行情变化
-- 🌐 **一键分享** — 支持局域网、GitHub Pages 分享给他人
-- 🧩 **模块化设计** — 每一步都可以独立运行，方便调试和学习
+[![在线 Demo](https://img.shields.io/badge/🌐_在线_Demo-点我查看-blue?style=for-the-badge)](https://weichenli0909-crypto.github.io/stock-report/)
+[![难度](https://img.shields.io/badge/🎓_难度-零基础友好-green?style=for-the-badge)]()
+[![免费](https://img.shields.io/badge/💰_费用-完全免费-orange?style=for-the-badge)]()
 
 ---
 
-## 📁 项目结构
+## 👋 这个软件能帮你做什么？
+
+每天自动为你生成一份**精美的股票分析报告**，包含：
+
+- 📈 **今日行情** — AI、光通信板块所有个股的涨跌情况
+- 📰 **舆情分析** — 自动抓新闻，AI 判断利好还是利空
+- 🇺🇸 **美股联动** — 英伟达、博通等美股最新行情
+- 🤖 **AI 预测** — 机器学习模型预测明日强弱势股票
+- 💰 **资金流向** — 主力资金流入/流出哪些股票
+- 🌌 **3D 星空图** — 个股关联关系可视化
+
+**报告效果可以先看在线 Demo 👉 [点这里](https://weichenli0909-crypto.github.io/stock-report/)**
+
+---
+
+## 🚀 两种使用方式 — 你可以选
+
+|   | 方式一：☁️ 云端全自动 | 方式二：💻 在自己电脑上跑 |
+|---|---|---|
+| **难度** | ⭐ 极简，点点鼠标 | ⭐⭐ 稍难，需装 Python |
+| **需要电脑开机？** | ❌ 不需要 | ✅ 需要 |
+| **每天自动更新？** | ✅ 周一~周五 15:35 | ❌ 手动双击刷新 |
+| **实时刷新按钮？** | ❌ 只读 | ✅ 可点按钮即时刷新 |
+| **推荐给** | **完全不懂技术的人** | 想自己折腾的人 |
+
+> 💡 **推荐方式一！** 完全不需要技术知识，全程只要点鼠标即可。
+
+---
+
+# 🎯 方式一：☁️ 云端全自动（推荐）
+
+> **5 分钟搞定，从此每天自动更新**
+> 原理：把代码**免费**托管到 GitHub，让 GitHub 的服务器**每天自动**帮你跑。你什么都不用装、不用管，每天打开网页就能看到最新报告。
+
+## 第 1 步：注册 GitHub 账号（3 分钟）
+
+1. 打开浏览器，访问 👉 https://github.com
+2. 点击右上角 **Sign up**（注册）
+3. 填写邮箱、密码、用户名（取一个英文名，比如 `zhangsan123`）
+4. 去邮箱点验证链接
+5. ✅ 完成
+
+> 如果你已有 GitHub 账号，直接跳到第 2 步。
+
+---
+
+## 第 2 步：把项目"复制"到你的账号（1 分钟）
+
+1. 打开项目主页 👉 **https://github.com/weichenli0909-crypto/stock-report**
+2. 登录你的 GitHub 账号
+3. 点击右上角 **Fork** 按钮
+4. 在弹出页面点 **Create fork**（绿色按钮）
+5. ✅ 等几秒，页面跳转到你自己账号下的副本
+
+> 💡 **Fork 就是"复制一份到我自己的账号"**。复制完后，这个项目就是你的了，网址变成 `https://github.com/你的用户名/stock-report`。
+
+---
+
+## 第 3 步：开启自动运行（30 秒）
+
+1. 在你的项目页面，点击上方 **Actions** 标签
+2. 看到黄色提示？点绿色按钮 **I understand my workflows, go ahead and enable them**
+3. 点击左侧列表里的 **📊 自动更新股票报告**
+4. 点击右侧 **Enable workflow**（启用工作流）
+5. ✅ 完成
+
+**从现在起**，每个工作日下午 **15:35**（A 股收盘后 5 分钟），GitHub 的服务器会自动：
+- 采集当天所有股票数据
+- 分析行情、跑 AI 模型
+- 生成最新报告
+- 更新你的报告网页
+
+---
+
+## 第 4 步：开启网页访问（30 秒）
+
+1. 在你的项目页面，点击上方 **Settings** 标签
+2. 在左侧菜单找到 **Pages**，点进去
+3. 在 "Build and deployment" 下：
+   - **Source** 选 `Deploy from a branch`
+   - **Branch** 选 `gh-pages`，旁边的文件夹选 `/ (root)`
+4. 点 **Save**
+5. ✅ 等 2-3 分钟即可
+
+---
+
+## 第 5 步：手动运行第一次（等不及？）
+
+不想等到下午 15:35？可以手动立即跑一次：
+
+1. 点 **Actions** 标签
+2. 点左侧 **📊 自动更新股票报告**
+3. 点右侧 **Run workflow** → 再点绿色的 **Run workflow** 按钮
+4. 等 2-3 分钟，看到绿色 ✅ 就是成功
+5. 打开你的报告网页：`https://你的用户名.github.io/stock-report/`
+
+---
+
+## 🎉 完成！收藏下面这个网址：
 
 ```
-data_workflow/
-│
-├── 🚀 核心脚本
-│   ├── run_workflow.py      # 主入口 — 一键运行完整6步工作流
-│   ├── config.py            # 配置文件 — 板块/个股/产业链/美股定义
-│   ├── step1_collect.py     # Step 1 — A股实时行情 + 历史数据 + 板块资金流向
-│   ├── step1b_news.py       # Step 2 — 舆情新闻采集 + 情绪分析
-│   ├── step1c_us_stocks.py  # Step 3 — 美股关联标的行情采集
-│   ├── step2_analyze.py     # Step 4 — 多维数据分析（涨跌/板块/趋势/波动率）
-│   ├── step2b_predict.py    # Step 5 — 机器学习预测（随机森林/梯度提升）
-│   └── step3_report.py      # Step 6 — 生成 HTML 可视化报告
-│
-├── 🔧 辅助工具
-│   ├── scheduler.py         # 定时调度器 — 盘中自动刷新
-│   ├── web_server.py        # Web服务器 — 局域网分享报告
-│   └── deploy_pages.py      # 部署脚本 — 一键发布到 GitHub Pages
-│
-├── 📁 data/                 # 数据目录（自动生成）
-│   ├── realtime_YYYYMMDD.csv       # A股实时行情
-│   ├── history_YYYYMMDD.csv        # 30天历史日线
-│   ├── sector_funds_YYYYMMDD.csv   # 板块资金流向
-│   ├── news_YYYYMMDD.json          # 舆情新闻数据
-│   ├── us_stocks_YYYYMMDD.json     # 美股行情数据
-│   ├── analysis_YYYYMMDD.json      # 分析结果
-│   └── predictions_YYYYMMDD.json   # ML预测结果
-│
-└── 📁 output/               # 报告输出目录（自动生成）
-    ├── report.html                 # ✨ 最终 HTML 日报（浏览器打开）
-    ├── sector_performance.png      # 板块涨跌幅图
-    ├── stock_top_bottom.png        # 涨跌排行图
-    ├── history_trend.png           # 近期趋势图
-    ├── sentiment_pie.png           # 舆情情绪分布图
-    └── volume_pie.png              # 成交额占比图
+https://你的用户名.github.io/stock-report/
 ```
+
+- 📱 **手机也能看**，直接在手机浏览器打开
+- 🔗 **分享给朋友**，把链接发给任何人都能看
+- 🌏 **每天自动更新**，你什么都不用做
+- 💸 **永久免费**，GitHub 全部免费承担服务器费用
 
 ---
 
-## 🚀 快速开始
+## 🔄 以后怎么同步最新功能？
 
-### 1️⃣ 安装依赖
+当原作者（我）更新了新功能：
+
+1. 打开你的项目页面
+2. 如果页面上方显示 "This branch is X commits behind..."
+3. 点 **Sync fork** → 点 **Update branch**
+4. ✅ 完成，下次自动运行就会用新代码了
+
+---
+
+---
+
+# 💻 方式二：在自己电脑上运行
+
+> 适合想本地实时刷新、不依赖网络的人。
+
+## 🍎 Mac 用户教程
+
+### 第 1 步：下载项目代码
+
+**方法 A：直接下载 ZIP（最简单，不需要 Git）**
+
+1. 打开 👉 **https://github.com/weichenli0909-crypto/stock-report**
+2. 点击绿色 **Code** 按钮 → **Download ZIP**
+3. 下载完双击解压，把文件夹**移到桌面**
+
+**方法 B：用 Git 克隆（推荐，方便更新）**
 
 ```bash
-pip install akshare pandas matplotlib numpy scikit-learn
+cd ~/Desktop
+git clone https://github.com/weichenli0909-crypto/stock-report.git
 ```
 
-> 💡 推荐使用 Python 3.8+，建议在虚拟环境中安装
+### 第 2 步：一键安装
 
-### 2️⃣ 一键运行完整工作流
+1. 打开解压后的文件夹
+2. **右键**点击 `一键安装-Mac.command` → 选择 **打开**
+   （第一次可能提示"无法验证开发者"，所以要用右键打开）
+3. 在弹出的终端窗口里按 **Enter** 开始安装
+4. 等待 3-5 分钟，看到 "🎉 安装完成！" 即可
 
-```bash
-cd data_workflow
-python3 run_workflow.py
-```
+> 💡 脚本会自动安装：Homebrew、Python 3、所有依赖库。**完全不用你操心**。
 
-运行后会自动：
-1. 📥 采集 A 股实时行情和历史数据
-2. 📰 采集板块新闻和舆情
-3. 🇺🇸 采集美股关联标的行情
-4. 🔍 进行多维度数据分析
-5. 🤖 运行 ML 模型预测涨跌
-6. 📊 生成 HTML 可视化报告并自动打开浏览器
+### 第 3 步：一键启动
 
-### 3️⃣ 查看报告
+1. 双击 `启动股票报告-Mac.command`
+2. 询问是否更新数据时，输入 `1` 按 Enter（第一次建议选 1）
+3. 等待 1-2 分钟，浏览器会**自动打开**报告页面
+4. ✅ 完成！报告就在 http://localhost:8899
 
-工作流运行完成后，会自动在浏览器中打开报告。你也可以手动打开：
-
-```bash
-open output/report.html        # macOS
-# 或
-start output/report.html       # Windows
-```
+**以后每次**只需要双击 `启动股票报告-Mac.command` 就行了！
 
 ---
 
-## 📖 详细用法
+## 🪟 Windows 用户教程
 
-### 🔹 单独运行某一步
+### 第 1 步：下载项目代码
 
-如果你只想运行工作流的某个步骤：
+1. 打开 👉 **https://github.com/weichenli0909-crypto/stock-report**
+2. 点击绿色 **Code** 按钮 → **Download ZIP**
+3. 右键下载的 zip 文件 → **全部解压缩**
+4. 把文件夹放到**桌面**
 
+### 第 2 步：一键安装
+
+1. 打开解压后的文件夹
+2. 双击 `一键安装-Windows.bat`
+3. 如果没装 Python，脚本会打开下载页面：
+   - 点黄色 **Download Python** 按钮下载
+   - 双击安装包
+   - ⚠️⚠️⚠️ **务必勾选底部的 "Add Python to PATH"**（这一步非常重要！忘了勾选必须重装）
+   - 点 **Install Now**
+   - 装完**重新双击** `一键安装-Windows.bat`
+4. 等待 3-5 分钟，看到 "🎉 安装完成！" 即可
+
+### 第 3 步：一键启动
+
+1. 双击 `启动股票报告-Windows.bat`
+2. 询问是否更新数据时，输入 `1` 按 Enter
+3. 等待 1-2 分钟，浏览器会**自动打开**报告页面
+4. ✅ 完成！
+
+**以后每次**只需要双击 `启动股票报告-Windows.bat` 就行了！
+
+---
+
+## 🔄 本地版本如何更新到最新？
+
+### 方式 A：如果你是用 ZIP 下载的
+1. 重新下载最新 ZIP（https://github.com/weichenli0909-crypto/stock-report）
+2. 覆盖旧的文件夹（记得先备份你的 `data/` 和 `output/` 文件夹）
+3. 双击启动脚本即可
+
+### 方式 B：如果你是用 Git 克隆的（推荐）
+在终端里进入项目文件夹，输入：
 ```bash
-python3 run_workflow.py 1    # 只运行 Step 1: A股行情采集
-python3 run_workflow.py 2    # 只运行 Step 2: 舆情新闻采集
-python3 run_workflow.py 3    # 只运行 Step 3: 美股行情采集
-python3 run_workflow.py 4    # 只运行 Step 4: 数据分析
-python3 run_workflow.py 5    # 只运行 Step 5: ML预测
-python3 run_workflow.py 6    # 只运行 Step 6: 生成报告
+git pull
 ```
-
-### 🔹 定时自动刷新（盘中实时监控）
-
-```bash
-python3 scheduler.py              # 默认每5分钟刷新一次
-python3 scheduler.py 3            # 每3分钟刷新
-python3 scheduler.py 10 --full    # 每10分钟，含舆情+美股完整刷新
-```
-
-调度器特性：
-- 📅 自动识别交易日（周末跳过）
-- ⏰ 仅在交易时段（9:15-15:05）执行刷新
-- ⚡ 盘中使用快速模式（行情+分析+报告），非盘中时跑完整流程
-- 🛑 按 `Ctrl+C` 优雅退出
-
-### 🔹 局域网分享报告
-
-让同一 Wi-Fi 下的手机/电脑也能看到报告：
-
-```bash
-python3 web_server.py              # 启动Web服务器（默认端口8899）
-python3 web_server.py 9000         # 自定义端口
-```
-
-启动后会显示局域网访问地址，如 `http://192.168.1.xxx:8899`，把这个链接发给同事即可。
-
-### 🔹 部署到 GitHub Pages（公网永久链接）
-
-让任何人通过固定链接随时查看最新报告：
-
-```bash
-python3 deploy_pages.py
-```
-
-首次使用需要配置 GitHub 仓库（脚本会引导你），之后每次运行都会自动推送更新。
+一秒搞定，最为优雅。
 
 ---
 
-## 📋 关注的板块与个股
+---
 
-### A 股（6大板块，37只个股）
+# 💡 进阶：自定义关注的股票
 
-| 板块 | 个股数 | 代表个股 |
-|------|--------|----------|
-| **AI算力** | 8 | 海康威视、中科曙光、寒武纪、浪潮信息、科大讯飞 |
-| **CPO(共封装光学)** | 8 | 中际旭创、新易盛、源杰科技、长光华芯、仕佳光子 |
-| **光模块** | 9 | 中际旭创、新易盛、天孚通信、剑桥科技、博创科技 |
-| **光通信** | 8 | 烽火通信、长飞光纤、亨通光电、中天科技 |
-| **OCS(光电路交换)** | 6 | 中际旭创、新易盛、天孚通信、德科立 |
-| **PCB** | 9 | 沪电股份、深南电路、生益科技、胜宏科技 |
+不想只看我配置的股票？可以**自己改**！
 
-### 美股关联标的（10只）
+1. 打开 `config.py` 文件（用记事本、TextEdit、VS Code 都行）
+2. 找到 `STOCK_GROUPS` 部分：
+   ```python
+   STOCK_GROUPS = {
+       "AI算力": {
+           "002230": "科大讯飞",
+           "300059": "东方财富",
+           # 你想加的股票：
+           "你的股票代码": "股票名称",
+       },
+       # ...
+   }
+   ```
+3. 保存
+4. 重新运行一次即可
 
-| 美股 | 关联逻辑 |
-|------|----------|
-| **英伟达 NVDA** | AI算力霸主，GPU/CUDA生态，GB200服务器 |
-| **博通 AVGO** | 数据中心交换芯片，定制AI芯片(TPU) |
-| **相干 COHR** | 全球Top3光模块，800G光模块标杆 |
-| **Lumentum LITE** | 光器件龙头，ROADM/WSS |
-| **Arista ANET** | 数据中心高端交换机，AI集群网络 |
-| **微软 MSFT** | Azure云计算，OpenAI最大投资方 |
-| **谷歌 GOOGL** | GCP云计算，TPU芯片，OCS架构推动者 |
-| **Meta META** | AI资本开支大增，数据中心光模块需求 |
-| **亚马逊 AMZN** | AWS全球第一，Trainium自研AI芯片 |
-| **思科 CSCO** | 网络设备龙头，光模块大买家 |
-
-> 💡 所有股票列表都可以在 `config.py` 中自由修改
+> 💡 股票代码就是炒股软件里看到的 6 位数字（比如 `000001` 是平安银行）
 
 ---
 
-## 📊 工作流六步详解
-
-```
-┌──────────┐    ┌──────────┐    ┌──────────┐
-│  Step 1   │    │  Step 2   │    │  Step 3   │
-│  📥 行情   │───▶│  📰 舆情   │───▶│  🇺🇸 美股  │
-│  采集     │    │  采集     │    │  采集     │
-└──────────┘    └──────────┘    └──────────┘
-      │                                │
-      ▼                                ▼
-┌──────────┐    ┌──────────┐    ┌──────────┐
-│  Step 4   │    │  Step 5   │    │  Step 6   │
-│  🔍 数据   │───▶│  🤖 ML    │───▶│  📊 报告   │
-│  分析     │    │  预测     │    │  生成     │
-└──────────┘    └──────────┘    └──────────┘
-```
-
-| 步骤 | 文件 | 做什么 | 输出 |
-|------|------|--------|------|
-| **Step 1** | `step1_collect.py` | 采集37只A股实时行情、30天历史数据、板块资金流向 | CSV 数据文件 |
-| **Step 2** | `step1b_news.py` | 采集板块新闻动态，分析情绪（利好/利空/中性） | JSON 舆情数据 |
-| **Step 3** | `step1c_us_stocks.py` | 采集10只美股行情，映射A股关联个股 | JSON 美股数据 |
-| **Step 4** | `step2_analyze.py` | 涨跌排行、板块对比、趋势分析、波动率计算 | JSON 分析结果 |
-| **Step 5** | `step2b_predict.py` | 随机森林+梯度提升模型预测次日涨跌概率 | JSON 预测结果 |
-| **Step 6** | `step3_report.py` | 生成图表 + 产业链分析 + 个股档案 → HTML报告 | HTML + PNG |
-
----
-
-## 🛠️ 自定义配置
-
-### 添加新股票
-
-编辑 `config.py`，在 `STOCK_GROUPS` 中添加：
-
-```python
-STOCK_GROUPS = {
-    "AI算力": {
-        "002415": "海康威视",
-        "600000": "你想添加的股票",  # ← 加在这里
-    },
-    # ...
-}
-```
-
-### 添加新板块
-
-```python
-STOCK_GROUPS = {
-    # ... 已有板块 ...
-    "新板块名称": {
-        "股票代码1": "股票名称1",
-        "股票代码2": "股票名称2",
-    },
-}
-```
-
-同时可以在 `SECTOR_INFO` 和 `STOCK_PROFILES` 中添加板块介绍和个股档案。
-
----
-
-## 🎓 学习要点
-
-通过这个项目你可以学到：
-
-| 技能 | 涉及内容 |
-|------|----------|
-| 🐍 **Python 模块化设计** | 将大任务拆分为6个独立步骤，通过主入口编排 |
-| 📡 **API 数据采集** | 使用 akshare 获取 A 股/美股金融数据 |
-| 🧹 **数据清洗处理** | pandas DataFrame 操作、数据合并、去重、缺失值处理 |
-| 📊 **数据可视化** | matplotlib 图表绑定（柱状图、饼图、折线图） |
-| 🤖 **机器学习实战** | scikit-learn 随机森林 + 梯度提升分类器 |
-| 📰 **NLP 情感分析** | 基于关键词的新闻情绪判断 |
-| 📄 **自动报告生成** | HTML + CSS 暗色主题报告模板 |
-| 🔗 **工作流编排** | 步骤间的数据传递与依赖管理 |
-| ⏰ **定时任务** | Python 调度器，交易时间判断 |
-| 🌐 **Web 服务** | HTTP 服务器搭建、局域网/公网分享 |
-
----
-
-## ❓ 常见问题
+# ❓ 常见问题
 
 <details>
-<summary><b>Q: 运行时报错 ModuleNotFoundError</b></summary>
-
-安装缺失的依赖：
-```bash
-pip install akshare pandas matplotlib numpy scikit-learn
-```
+<summary><b>Q：GitHub 要付费吗？</b></summary>
+完全免费。方式一全程免费，包括：
+- GitHub 账号
+- GitHub Actions（免费服务器每月 2000 分钟，本项目每月只用 ~66 分钟）
+- GitHub Pages（免费网页托管）
 </details>
 
 <details>
-<summary><b>Q: 非交易时间运行，数据是空的？</b></summary>
-
-非交易时间（晚上/周末）也可以运行！数据会采集到最近一个交易日的收盘数据。实时行情数据在盘中更有意义。
+<summary><b>Q：我没有 Git/编程基础，能用吗？</b></summary>
+能！方式一全程点鼠标，不需要写一行代码。方式二的一键脚本也会自动帮你装好环境。
 </details>
 
 <details>
-<summary><b>Q: 如何让报告自动每天更新？</b></summary>
-
-使用定时调度器：
-```bash
-python3 scheduler.py 5    # 盘中每5分钟自动刷新
-```
-
-或使用系统的 crontab 定时任务：
-```bash
-# 每个交易日 9:30 自动运行（macOS/Linux）
-30 9 * * 1-5 cd /path/to/data_workflow && python3 run_workflow.py
-```
+<summary><b>Q：报告什么时候更新？</b></summary>
+方式一：每个交易日（周一~周五）下午 15:35 自动更新。
+方式二：双击启动脚本时手动更新。
 </details>
 
 <details>
-<summary><b>Q: 如何把报告分享给不在同一网络的人？</b></summary>
-
-方法1：部署到 GitHub Pages（推荐）
-```bash
-python3 deploy_pages.py
-```
-
-方法2：直接把 `output/report.html` 文件通过微信/邮件发给对方
+<summary><b>Q：Mac 提示"无法验证开发者"怎么办？</b></summary>
+不要双击，改用**右键** → **打开** → 再次确认打开。之后就可以双击了。
 </details>
 
 <details>
-<summary><b>Q: 如何修改关注的股票？</b></summary>
+<summary><b>Q：Windows 双击 .bat 一闪就关？</b></summary>
+说明 Python 没装好。重新运行 `一键安装-Windows.bat`，按提示装 Python（记得勾 "Add Python to PATH"）。
+</details>
 
-编辑 `config.py` 文件中的 `STOCK_GROUPS` 字典，添加或删除股票代码即可。修改后重新运行 `python3 run_workflow.py`。
+<details>
+<summary><b>Q：端口 8899 被占用怎么办？</b></summary>
+启动脚本会自动关闭占用 8899 端口的旧进程，无需手动处理。如果还是不行，重启电脑即可。
+</details>
+
+<details>
+<summary><b>Q：我还有其他问题/想提建议</b></summary>
+去 GitHub 项目的 **Issues** 页面提问即可：
+https://github.com/weichenli0909-crypto/stock-report/issues/new
 </details>
 
 ---
 
-## ⚠️ 免责声明
+# ⚠️ 免责声明
 
-本项目仅供学习 Python 编程使用，所有数据来源于公开接口，**不构成任何投资建议**。投资有风险，入市需谨慎。
+本项目仅供**学习和研究**使用。所有数据来源于公开接口，**不构成任何投资建议**。投资有风险，入市需谨慎，盈亏自负。
 
 ---
 
-## 📝 更新日志
+# 📂 文件速查表
 
-- **v3.0** — 新增舆情分析、美股联动、ML预测、产业链图谱、GitHub Pages 部署
-- **v2.0** — 新增定时调度器、Web 分享服务器、个股档案
-- **v1.0** — 基础版：行情采集 + 数据分析 + HTML 报告
+| 文件 | 用途 |
+|---|---|
+| `一键安装-Mac.command` | Mac 用户首次双击安装环境 |
+| `启动股票报告-Mac.command` | Mac 用户每次双击启动 |
+| `一键安装-Windows.bat` | Windows 用户首次双击安装 |
+| `启动股票报告-Windows.bat` | Windows 用户每次双击启动 |
+| `requirements.txt` | Python 依赖清单（不用管） |
+| `config.py` | 关注的股票列表（可以改） |
+| `run_workflow.py` | 主程序（不用管） |
+| `.github/workflows/update-report.yml` | GitHub 自动运行配置（不用管） |
 
 ---
 
 <p align="center">
-  Made with ❤️ by Python | 数据驱动投资研究
+  Made with ❤️ | 让每个人都能享受数据驱动的投资研究
 </p>

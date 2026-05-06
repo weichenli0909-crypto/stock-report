@@ -354,7 +354,8 @@ def compute_factor_scores(latest_df, factor_config=None):
 
 def run_prediction():
     print("\n" + "=" * 60)
-    print(f"🤖 开始多因子评分 v4.0 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"🤖 开始多因子评分 v5.0 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
     print("=" * 60)
 
     today = datetime.now().strftime("%Y%m%d")

@@ -57,6 +57,11 @@ def deploy():
     shutil.copy2(REPORT_FILE, os.path.join(DEPLOY_DIR, "index.html"))
     # 同时保留 report.html
     shutil.copy2(REPORT_FILE, os.path.join(DEPLOY_DIR, "report.html"))
+    # 复制星空图
+    starmap_file = os.path.join(OUTPUT_DIR, "starmap.html")
+    if os.path.exists(starmap_file):
+        shutil.copy2(starmap_file, os.path.join(DEPLOY_DIR, "starmap.html"))
+        print("  🌌 星空图已复制")
     # 复制图表图片
     for f in os.listdir(OUTPUT_DIR):
         if f.endswith(".png"):

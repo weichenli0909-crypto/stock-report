@@ -281,6 +281,23 @@ def run_collection():
         df_sector.to_csv(path, index=False, encoding="utf-8-sig")
         print(f"  💾 板块表现已保存: {path}")
 
+    # 4. 采集财务快照数据（PE/PB/市值等）
+    try:
+        import akshare as ak
+        print("📥 正在采集财务快照数据...")
+        spot_df = ak.stock_zh_a_spot_em()
+        all_codes = set(get_all_stocks().keys())
+        spot_df["代码"] = spot_df["代码"].astype(str).str.zfill(6)
+        tracked = spot_df[spot_df["代码"].isin(all_codes)].copy()
+        # 保留关键字段
+        keep_cols = ["代码", "名称", "最新价", "涨跌幅", "换手率", "市盈率-动态", "市净率", "总市值", "流通市值", "成交额"]
+        tracked = tracked[[c for c in keep_cols if c in tracked.columns]]
+        path = os.path.join(DATA_DIR, f"finance_{today}.csv")
+        tracked.to_csv(path, index=False, encoding="utf-8-sig")
+        print(f"  ✅ 财务快照已保存: {path} ({len(tracked)} 只)")
+    except Exception as e:
+        print(f"  ⚠️ 财务快照采集失败: {e}")
+
     print("\n✅ 数据采集完成！")
     return df_realtime, df_history, df_sector
 

@@ -8,3 +8,7 @@ output/*.png
 output/*.html
 gh-pages/.git
 
+
+# 🔐 本地 API key（绝不上传）
+.env
+.env.local

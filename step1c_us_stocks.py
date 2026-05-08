@@ -74,6 +74,190 @@ def fetch_us_stock_sina(ticker):
         return None
 
 
+# ===== 大事件关键词检测 =====
+EVENT_KEYWORDS = {
+    "分红": ["dividend", "dividends", "payout", "distribution"],
+    "财报": ["earnings", "quarterly results", "revenue", "profit", "EPS", "beat estimates", "miss estimates", "quarterly report", "Q1", "Q2", "Q3", "Q4"],
+    "收购": ["acquire", "acquisition", "merger", "takeover", "buyout", "deal"],
+    "建厂": ["factory", "plant", "manufacturing", "facility", "expand capacity", "new fab", "build"],
+    "大单": ["contract", "order", "deal worth", "billion-dollar", "partnership", "supply agreement", "wins order"],
+    "裁员": ["layoff", "lay off", "cut jobs", "restructuring", "workforce reduction"],
+    "拆股": ["stock split", "split"],
+    "回购": ["buyback", "repurchase", "share repurchase"],
+    "上市/IPO": ["IPO", "initial public offering", "goes public", "listing"],
+    "监管": ["SEC", "regulatory", "antitrust", "investigation", "lawsuit", "fine", "penalty"],
+}
+
+
+def detect_events(title, description=""):
+    """检测新闻中的大事件标签"""
+    text = (title + " " + description).lower()
+    events = []
+    for event_name, keywords in EVENT_KEYWORDS.items():
+        for kw in keywords:
+            if kw.lower() in text:
+                events.append(event_name)
+                break
+    return events
+
+
+def simple_translate(title, description=""):
+    """简单的英文→中文翻译（基于关键词替换+摘要提取，免费无需API）"""
+    # 常用财经词汇翻译映射
+    trans_map = {
+        "stock": "股票", "shares": "股份", "earnings": "财报/业绩",
+        "revenue": "营收", "profit": "利润", "loss": "亏损",
+        "beat estimates": "超预期", "miss estimates": "不及预期",
+        "dividend": "分红", "buyback": "回购", "acquisition": "收购",
+        "merger": "合并", "partnership": "合作", "contract": "合同",
+        "quarterly": "季度", "annual": "年度",
+        "growth": "增长", "decline": "下跌", "surge": "暴涨",
+        "plunge": "暴跌", "rally": "上涨", "drop": "下跌",
+        "AI": "人工智能", "chip": "芯片", "semiconductor": "半导体",
+        "data center": "数据中心", "cloud": "云计算",
+        "buy": "买入", "sell": "卖出", "hold": "持有",
+        "upgrade": "上调评级", "downgrade": "下调评级",
+        "target price": "目标价", "market cap": "市值",
+        "investors": "投资者", "analyst": "分析师",
+        "Nvidia": "英伟达", "Broadcom": "博通", "Microsoft": "微软",
+        "Google": "谷歌", "Amazon": "亚马逊", "Meta": "Meta",
+        "Apple": "苹果", "Tesla": "特斯拉", "AMD": "AMD",
+        "Cisco": "思科", "Arista": "Arista",
+    }
+    # 生成简易中文摘要
+    cn_summary = description[:100] if description else title[:80]
+    # 对关键词做标注
+    for en, cn in trans_map.items():
+        if en.lower() in title.lower() or en.lower() in description.lower():
+            cn_summary = cn_summary  # 保留原文，但我们加个中文标题
+    # 生成中文标题：用关键词拼凑
+    cn_keywords = []
+    title_lower = title.lower()
+    for en, cn in trans_map.items():
+        if en.lower() in title_lower:
+            cn_keywords.append(cn)
+    cn_title = "｜".join(cn_keywords[:4]) if cn_keywords else ""
+    return cn_title
+
+
+def fetch_us_news_yahoo(ticker, max_news=5):
+    """从 Yahoo Finance RSS 获取美股个股最新新闻（免费，含摘要+中文翻译+事件检测）"""
+    url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"
+    text = curl_get_text(url, referer="https://finance.yahoo.com")
+    if not text:
+        return []
+
+    news_list = []
+    try:
+        # 简单解析 RSS XML
+        items = re.findall(r'<item>(.*?)</item>', text, re.DOTALL)
+        for item in items[:max_news]:
+            title_match = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>', item)
+            if not title_match:
+                title_match = re.search(r'<title>(.*?)</title>', item)
+            link_match = re.search(r'<link>(.*?)</link>', item)
+            pub_match = re.search(r'<pubDate>(.*?)</pubDate>', item)
+            # 提取摘要/描述
+            desc_match = re.search(r'<description><!\[CDATA\[(.*?)\]\]></description>', item, re.DOTALL)
+            if not desc_match:
+                desc_match = re.search(r'<description>(.*?)</description>', item, re.DOTALL)
+
+            if title_match:
+                title = title_match.group(1).strip()
+                link = link_match.group(1).strip() if link_match else ""
+                pub_date = pub_match.group(1).strip() if pub_match else ""
+                # 清理摘要中的 HTML 标签
+                description = ""
+                if desc_match:
+                    description = desc_match.group(1).strip()
+                    description = re.sub(r'<[^>]+>', '', description)  # 去HTML标签
+                    description = description[:200]  # 截断
+                # 中文关键词翻译
+                cn_title = simple_translate(title, description)
+                # 大事件检测
+                events = detect_events(title, description)
+                news_list.append({
+                    "标题": title,
+                    "中文提示": cn_title,
+                    "摘要": description,
+                    "事件标签": events,
+                    "链接": link,
+                    "时间": pub_date,
+                    "来源": "Yahoo Finance",
+                })
+    except Exception:
+        pass
+    return news_list
+
+
+def fetch_us_news_sina(ticker):
+    """从新浪财经获取美股个股新闻（中文，免费）"""
+    # 新浪美股新闻 API
+    url = f"https://feed.mix.sina.com.cn/api/roll/get?pageid=155&lid=2516&k=&num=5&page=1&r=0.{int(time.time())}"
+    # 尝试用关键词搜索
+    name_map = {
+        "NVDA": "英伟达", "AVGO": "博通", "TSM": "台积电",
+        "COHR": "Coherent", "LITE": "Lumentum", "ANET": "Arista",
+        "MSFT": "微软", "GOOGL": "谷歌", "META": "Meta",
+        "AMZN": "亚马逊", "CSCO": "思科",
+    }
+    keyword = name_map.get(ticker, ticker)
+    search_url = f"https://search.sina.com.cn/news?q={keyword}&range=all&c=news&sort=time&col=1_7&source=&from=&country=&size=5&stype=0&dpc=1"
+    # 用简单的新浪搜索（可能被反爬，做 fallback）
+    text = curl_get_text(
+        f"https://feed.mix.sina.com.cn/api/roll/get?pageid=155&lid=2516&k={keyword}&num=5&page=1",
+        referer="https://finance.sina.com.cn"
+    )
+    news_list = []
+    if text:
+        try:
+            data = json.loads(text)
+            items = data.get("result", {}).get("data", [])
+            for item in items[:5]:
+                title = item.get("title", "").replace("<em>", "").replace("</em>", "")
+                if title and keyword.lower() in title.lower() or ticker.lower() in title.lower():
+                    news_list.append({
+                        "标题": title,
+                        "链接": item.get("url", ""),
+                        "时间": item.get("ctime", ""),
+                        "来源": "新浪财经",
+                    })
+        except Exception:
+            pass
+    return news_list
+
+
+def collect_us_news(tickers_info):
+    """采集美股新闻"""
+    print("\n📰 正在采集美股重要新闻...")
+    all_news = {}
+
+    for ticker, info in tickers_info.items():
+        name = info.get("名称", ticker)
+        print(f"  [{ticker}] {name} 新闻...", end="")
+
+        # 优先 Yahoo RSS（英文，稳定）
+        news = fetch_us_news_yahoo(ticker, max_news=3)
+
+        # 补充新浪中文新闻
+        sina_news = fetch_us_news_sina(ticker)
+        if sina_news:
+            news.extend(sina_news[:2])
+
+        if news:
+            all_news[ticker] = {
+                "名称": name,
+                "新闻": news[:5],  # 最多5条
+            }
+            print(f" ✓ {len(news)} 条")
+        else:
+            print(" ✗ 无新闻")
+
+        time.sleep(0.5)  # 避免太快被封
+
+    return all_news
+
+
 def collect_us_stocks():
     """采集所有美股关联标的行情"""
     print("🇺🇸 正在采集美股关联标的行情...")
@@ -106,7 +290,7 @@ def collect_us_stocks():
 
 
 def run_us_stock_collection():
-    """执行美股数据采集"""
+    """执行美股数据采集（行情 + 新闻）"""
     os.makedirs(DATA_DIR, exist_ok=True)
 
     print("\n" + "=" * 60)
@@ -115,12 +299,16 @@ def run_us_stock_collection():
 
     results = collect_us_stocks()
 
+    # 采集美股新闻
+    us_news = collect_us_news(US_STOCKS)
+
     # 保存
     today = datetime.now().strftime("%Y%m%d")
     path = os.path.join(DATA_DIR, f"us_stocks_{today}.json")
     save_data = {
         "采集时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "美股行情": results,
+        "美股新闻": us_news,
     }
     with open(path, "w", encoding="utf-8") as f:
         json.dump(save_data, f, ensure_ascii=False, indent=2)
@@ -129,7 +317,8 @@ def run_us_stock_collection():
     # 概览
     up = sum(1 for v in results.values() if v.get("涨跌幅", 0) > 0)
     down = sum(1 for v in results.values() if v.get("涨跌幅", 0) < 0)
-    print(f"\n📊 美股概览: 上涨 {up} 只 | 下跌 {down} 只")
+    total_news = sum(len(v.get("新闻", [])) for v in us_news.values())
+    print(f"\n📊 美股概览: 上涨 {up} 只 | 下跌 {down} 只 | 新闻 {total_news} 条")
 
     print("\n✅ 美股采集完成！")
     return save_data

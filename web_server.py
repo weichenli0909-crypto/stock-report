@@ -173,14 +173,33 @@ class ReportHandler(SimpleHTTPRequestHandler):
             self.send_json({"error": str(e)})
 
     def handle_search(self):
-        """个股搜索分析接口"""
+        """个股搜索分析接口（支持代码或名称）"""
         try:
-            from urllib.parse import parse_qs
+            from urllib.parse import parse_qs, unquote
             query = parse_qs(self.path.split('?')[1]) if '?' in self.path else {}
-            code = query.get('code', [''])[0].strip()
-            if not code or len(code) != 6 or not code.isdigit():
-                self.send_json({"error": "请输入6位股票代码"})
+            raw = query.get('code', [''])[0].strip()
+            raw = unquote(raw)
+            if not raw:
+                self.send_json({"error": "请输入股票代码或名称"})
                 return
+
+            # 如果输入不是6位数字，尝试从名称查找代码
+            code = raw
+            if len(raw) != 6 or not raw.isdigit():
+                try:
+                    from config import get_all_stocks
+                    all_stocks = get_all_stocks()
+                    found = None
+                    for c, name in all_stocks.items():
+                        if name == raw:
+                            found = c
+                            break
+                    if not found:
+                        self.send_json({"error": "未找到该股票名称"})
+                        return
+                    code = found
+                except Exception:
+                    pass
 
             prefix = "sh" if code.startswith(("6", "9")) else "sz"
             sina_code = f"{prefix}{code}"
@@ -261,7 +280,7 @@ class ReportHandler(SimpleHTTPRequestHandler):
         global refresh_status
         refresh_status["running"] = True
         refresh_status["step"] = 0
-        refresh_status["total_steps"] = 6
+        refresh_status["total_steps"] = 8
         refresh_status["last_result"] = None
         start = time.time()
 
@@ -269,14 +288,14 @@ class ReportHandler(SimpleHTTPRequestHandler):
             # Step 1
             refresh_status["progress"] = "📥 采集行情数据..."
             refresh_status["step"] = 1
-            print(f"\n  🔄 [API] Step 1/6 行情采集...")
+            print(f"\n  🔄 [API] Step 1/8 行情采集...")
             from step1_collect import run_collection
             run_collection()
 
             # Step 2
             refresh_status["progress"] = "📰 采集舆情新闻..."
             refresh_status["step"] = 2
-            print(f"  🔄 [API] Step 2/6 舆情采集...")
+            print(f"  🔄 [API] Step 2/8 舆情采集...")
             try:
                 from step1b_news import run_news_collection
                 run_news_collection()
@@ -286,7 +305,7 @@ class ReportHandler(SimpleHTTPRequestHandler):
             # Step 3
             refresh_status["progress"] = "🇺🇸 采集美股数据..."
             refresh_status["step"] = 3
-            print(f"  🔄 [API] Step 3/6 美股采集...")
+            print(f"  🔄 [API] Step 3/8 美股采集...")
             try:
                 from step1c_us_stocks import run_us_stock_collection
                 run_us_stock_collection()
@@ -294,26 +313,46 @@ class ReportHandler(SimpleHTTPRequestHandler):
                 pass
 
             # Step 4
-            refresh_status["progress"] = "🔍 数据分析..."
+            refresh_status["progress"] = "💰 采集资金流向..."
             refresh_status["step"] = 4
-            print(f"  🔄 [API] Step 4/6 数据分析...")
+            print(f"  🔄 [API] Step 4/8 资金流向采集...")
+            try:
+                from step1d_fundflow import run_fundflow_collection
+                run_fundflow_collection()
+            except Exception:
+                pass
+
+            # Step 5
+            refresh_status["progress"] = "🔍 数据分析..."
+            refresh_status["step"] = 5
+            print(f"  🔄 [API] Step 5/8 数据分析...")
             from step2_analyze import run_analysis
             run_analysis()
 
-            # Step 5
+            # Step 6
             refresh_status["progress"] = "🤖 ML预测..."
-            refresh_status["step"] = 5
-            print(f"  🔄 [API] Step 5/6 ML预测...")
+            refresh_status["step"] = 6
+            print(f"  🔄 [API] Step 6/8 ML预测...")
             try:
                 from step2b_predict import run_prediction
                 run_prediction()
             except Exception:
                 pass
 
-            # Step 6
+            # Step 7
+            refresh_status["progress"] = "📈 预测回测..."
+            refresh_status["step"] = 7
+            print(f"  🔄 [API] Step 7/8 预测回测...")
+            try:
+                from step2c_backtest import run_backtest
+                run_backtest()
+            except Exception:
+                pass
+
+            # Step 8
             refresh_status["progress"] = "📊 生成报告..."
-            refresh_status["step"] = 6
-            print(f"  🔄 [API] Step 6/6 生成报告...")
+            refresh_status["step"] = 8
+            print(f"  🔄 [API] Step 8/8 生成报告...")
             from step3_report import run_report
             run_report()
 

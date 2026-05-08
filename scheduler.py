@@ -186,5 +186,60 @@ def main():
         print(f"\n{status} 第 {count} 次刷新完成 - {now.strftime('%H:%M:%S')}")
 
 
+def run_daily_push():
+    """每日收盘后自动推送：运行完整工作流 + 部署 + 通知"""
+    target_hour, target_min = 15, 30
+
+    print("=" * 60)
+    print(f"📅 AI/光通信板块 - 每日自动推送")
+    print("=" * 60)
+    print(f"  🕐 目标时间: {target_hour:02d}:{target_min:02d}（收盘后）")
+    print(f"  🚀 执行内容: 完整工作流 + GitHub Pages 部署 + 系统通知")
+    print(f"  ⌨️  按 Ctrl+C 取消")
+    print("=" * 60)
+
+    running = True
+
+    def signal_handler(sig, frame):
+        nonlocal running
+        running = False
+        print(f"\n\n🛑 取消每日推送")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # 等待到目标时间
+    while running:
+        now = datetime.now()
+        if now.hour > target_hour or (now.hour == target_hour and now.minute >= target_min):
+            print(f"\n🚀 开始执行每日推送... ({now.strftime('%H:%M:%S')})")
+            break
+        else:
+            wait_sec = (target_hour * 3600 + target_min * 60) - (now.hour * 3600 + now.minute * 60 + now.second)
+            if wait_sec > 60:
+                print(f"  ⏳ 等待中... 还剩 {wait_sec // 60} 分钟")
+                time.sleep(60)
+            else:
+                time.sleep(1)
+
+    if not running:
+        return
+
+    # 执行完整工作流
+    try:
+        from run_workflow import run_full_workflow, auto_deploy
+
+        report_path = run_full_workflow()
+        if report_path:
+            auto_deploy()
+        else:
+            print("  ❌ 报告生成失败，跳过部署")
+    except Exception as e:
+        print(f"  ❌ 每日推送失败: {e}")
+
+
 if __name__ == "__main__":
-    main()
+    if "--daily" in sys.argv:
+        run_daily_push()
+    else:
+        main()
